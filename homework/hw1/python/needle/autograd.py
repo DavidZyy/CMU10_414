@@ -104,7 +104,7 @@ class Value:
             return self.cached_data
         # note: data implicitly calls realized cached data
         self.cached_data = self.op.compute(
-            *[x.realize_cached_data() for x in self.inputs]
+            *[x.realize_cached_data() for x in self.inputs] # "*" is used to unpack the elements,
         )
         return self.cached_data
 
@@ -326,6 +326,7 @@ class Tensor(Value):
             return needle.ops.PowerScalar(other)(self)
 
     def __sub__(self, other):
+        # have two operations, the first is neg, the second is adding.
         if isinstance(other, Tensor):
             return needle.ops.EWiseAdd()(self, needle.ops.Negate()(other))
         else:
@@ -393,14 +394,21 @@ def find_topo_sort(node_list: List[Value]) -> List[Value]:
     sort.
     """
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    topo_order = []
+    for node in node_list:
+        topo_sort_dfs(node, topo_order)
+    return topo_order
     ### END YOUR SOLUTION
 
 
-def topo_sort_dfs(node, visited, topo_order):
+def topo_sort_dfs(node, topo_order):
     """Post-order DFS"""
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    if(node == None or node in topo_order):
+        return
+    for child in node.inputs:
+        topo_sort_dfs(child, topo_order)
+    topo_order.append(node)
     ### END YOUR SOLUTION
 
 
