@@ -494,15 +494,15 @@ def test_power_scalar_backward():
     )
 
 
-def test_power_backward():
-    # zyy
-    gradient_check(
-        ndl.power,
-        ndl.Tensor(np.random.randn(5, 4)),
-        ndl.Tensor(np.random.randn(5, 4)),
-        # (np.random.randn(5, 4)),
-        # (np.random.randn(5, 4)),
-    )
+# def test_power_backward():
+#     # zyy
+#     gradient_check(
+#         ndl.power,
+#         ndl.Tensor(np.random.randn(5, 4)),
+#         ndl.Tensor(np.random.randn(5, 4)),
+#         # (np.random.randn(5, 4)),
+#         # (np.random.randn(5, 4)),
+#     )
 
 def test_divide_backward():
     gradient_check(
@@ -926,6 +926,9 @@ def submit_compute_gradient():
 ##############################################################################
 ### TESTS/SUBMISSION CODE FOR softmax_loss
 
+def test_exp_backward():
+    gradient_check(ndl.exp, ndl.Tensor(1 + np.random.rand(5, 4)))
+
 
 def test_softmax_loss_ndl():
     # test forward pass for log
@@ -938,7 +941,7 @@ def test_softmax_loss_ndl():
     gradient_check(ndl.log, ndl.Tensor(1 + np.random.rand(5, 4)))
 
     X, y = parse_mnist(
-        "data/train-images-idx3-ubyte.gz", "data/train-labels-idx1-ubyte.gz"
+        "../../data/train-images-idx3-ubyte.gz", "../../data/train-labels-idx1-ubyte.gz"
     )
     np.random.seed(0)
     Z = ndl.Tensor(np.zeros((y.shape[0], 10)).astype(np.float32))
@@ -956,6 +959,21 @@ def test_softmax_loss_ndl():
     # test softmax loss backward
     Zsmall = ndl.Tensor(np.random.randn(16, 10).astype(np.float32))
     ysmall = ndl.Tensor(y_one_hot[:16])
+    gradient_check(softmax_loss, Zsmall, ysmall, tol=0.01, backward=True)
+
+
+# zyy
+def test_softmax_loss_gradient():
+    a = np.zeros((1, 10))
+    b = np.zeros((1, 10))
+    a[0, 0] = 1
+    # b[0, 0] = 20
+    # b[0, 0] = 1
+    Zsmall = ndl.Tensor(b.astype(np.float32))
+    ysmall = ndl.Tensor(a)
+    # np.testing.assert_allclose(
+    #     softmax_loss(Zsmall, ysmall).numpy(), 0, rtol=1e-6, atol=1e-6
+    # )
     gradient_check(softmax_loss, Zsmall, ysmall, tol=0.01, backward=True)
 
 

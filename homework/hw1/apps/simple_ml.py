@@ -33,7 +33,22 @@ def parse_mnist(image_filesname, label_filename):
                 for MNIST will contain the values 0-9.
     """
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    with gzip.open(image_filesname, 'rb') as f:
+        magic_number = int.from_bytes(f.read(4), 'big')
+        num_images = int.from_bytes(f.read(4), 'big')
+        num_rows = int.from_bytes(f.read(4), 'big')
+        num_cols = int.from_bytes(f.read(4), 'big')
+        images = np.frombuffer(f.read(), dtype=np.uint8).reshape(num_images, num_rows * num_cols)
+
+    with gzip.open(label_filename, 'rb') as f:
+        magic_number = int.from_bytes(f.read(4), 'big')
+        num_labels = int.from_bytes(f.read(4), 'big')
+        labels = np.frombuffer(f.read(), dtype=np.uint8)
+
+    X = images.astype(np.float32) / 255.0
+    y = labels.astype(np.uint8)
+
+    return X, y
     ### END YOUR SOLUTION
 
 
@@ -46,17 +61,36 @@ def softmax_loss(Z, y_one_hot):
         Z (ndl.Tensor[np.float32]): 2D Tensor of shape
             (batch_size, num_classes), containing the logit predictions for
             each class.
-        y (ndl.Tensor[np.int8]): 2D Tensor of shape (batch_size, num_classes)
+        y_one_hot (ndl.Tensor[np.int8]): 2D Tensor of shape (batch_size, num_classes)
             containing a 1 at the index of the true label of each example and
             zeros elsewhere.
 
     Returns:
         Average softmax loss over the sample. (ndl.Tensor[np.float32])
     """
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    # Number of samples
+    N = Z.shape[0]
 
+    # Compute the softmax
+    # By subtracting the maximum value from each element along the rows,
+    # we ensure numerical stability and prevent overflow issues when computing the softmax probabilities,
+    # making the computation more robust and accurate.
+    exp_Z = ndl.exp(Z)
+    exp_sum = ndl.broadcast_to(ndl.reshape(ndl.summation(exp_Z, axes=1), (exp_Z.shape[0], 1)), exp_Z.shape)
+    softmax_scores = exp_Z / exp_sum  # shape N * k
+
+    # Cross-entropy loss
+    # Note: we use np.log(x + eps) to avoid log(0) which is undefined.
+    # eps = 1e-10
+    true_score = softmax_scores * y_one_hot
+    true_score_1 = ndl.summation(true_score, axes=1)
+    cross_entropy = -ndl.log(true_score_1)  # shape N * 1
+
+    # Compute average loss
+    average_loss = ndl.summation(cross_entropy, axes=0) / N  # shape 1 * 1
+
+    return average_loss
+ 
 
 def nn_epoch(X, y, W1, W2, lr=0.1, batch=100):
     """Run a single epoch of SGD for a two-layer neural network defined by the

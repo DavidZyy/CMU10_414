@@ -383,7 +383,7 @@ def compute_gradient_of_variables(output_tensor, out_grad):
     for node in reverse_topo_order:
         node.grad = sum_node_list(node_to_output_grads_list[node])
         if node.op is not None:
-            child_grads = [ x for x in node.op.gradient_as_tuple(node.grad, node) ]
+            child_grads = [x for x in node.op.gradient_as_tuple(node.grad, node)]
             for i in range(len(child_grads)):
                 child_node = node.inputs[i]
                 if child_node not in node_to_output_grads_list:
