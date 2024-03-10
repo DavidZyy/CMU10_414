@@ -170,7 +170,6 @@ def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
     Returns:
         None
     """
-    ### BEGIN YOUR CODE
     num_examples = X.shape[0]
 
     for i in range(0, num_examples, batch):
@@ -193,7 +192,6 @@ def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
 
         W2 -= lr * W2_grad
         W1 -= lr * W1_grad
-    ### END YOUR CODE
 
 
 

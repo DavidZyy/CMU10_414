@@ -281,10 +281,10 @@ def exp(a):
 
 class ReLU(TensorOp):
     def compute(self, a):
-        raise NotImplementedError()
+        return array_api.maximum(a, 0)
 
     def gradient(self, out_grad, node):
-        raise NotImplementedError()
+        return Tensor(node.inputs[0].numpy() > 0, dtype='float32') * out_grad
 
 def relu(a):
     return ReLU()(a)

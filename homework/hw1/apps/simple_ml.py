@@ -116,9 +116,29 @@ def nn_epoch(X, y, W1, W2, lr=0.1, batch=100):
             W2: ndl.Tensor[np.float32]
     """
 
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    num_examples = X.shape[0]
+    # print("total epoch: ", num_examples/batch)
+
+    for i in range(0, num_examples, batch):
+        # print("epoch: ", i)
+        x_batch = ndl.Tensor(X[i:i+batch])
+        y_batch = y[i:i+batch]
+
+        temp = np.zeros((batch, np.max(y_batch)+1))
+        temp[range(batch), y_batch] = 1
+        y_one_hot = ndl.Tensor(temp)
+
+        z1 = x_batch
+        z2 = ndl.relu(ndl.matmul(z1, W1))
+        z3 = ndl.matmul(z2, W2)
+
+        loss = softmax_loss(z3, y_one_hot)
+        loss.backward()
+
+        W2 -= lr * W2.grad
+        W1 -= lr * W1.grad
+    
+    return W1, W2
 
 
 ### CODE BELOW IS FOR ILLUSTRATION, YOU DO NOT NEED TO EDIT

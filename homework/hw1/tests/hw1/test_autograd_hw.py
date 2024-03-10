@@ -930,6 +930,10 @@ def test_exp_backward():
     gradient_check(ndl.exp, ndl.Tensor(1 + np.random.rand(5, 4)))
 
 
+def test_relu_backward():
+    gradient_check(ndl.relu, ndl.Tensor(-0.5 + np.random.rand(5, 4)))
+
+
 def test_softmax_loss_ndl():
     # test forward pass for log
     np.testing.assert_allclose(
@@ -1055,8 +1059,10 @@ def test_nn_epoch_ndl():
 
     # test full epoch
     X, y = parse_mnist(
-        "data/train-images-idx3-ubyte.gz", "data/train-labels-idx1-ubyte.gz"
+        "../../data/train-images-idx3-ubyte.gz", "../../data/train-labels-idx1-ubyte.gz"
     )
+    # X = X[:300]
+    # y = y[:300]
     np.random.seed(0)
     W1 = ndl.Tensor(np.random.randn(X.shape[1], 100).astype(np.float32) / np.sqrt(100))
     W2 = ndl.Tensor(np.random.randn(100, 10).astype(np.float32) / np.sqrt(10))

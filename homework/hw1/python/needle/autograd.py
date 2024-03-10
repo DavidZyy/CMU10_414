@@ -104,7 +104,7 @@ class Value:
             return self.cached_data
         # note: data implicitly calls realized cached data
         self.cached_data = self.op.compute(
-            *[x.realize_cached_data() for x in self.inputs] # "*" is used to unpack the elements,
+            *[x.realize_cached_data() for x in self.inputs]  # "*" is used to unpack the elements,
         )
         return self.cached_data
 
