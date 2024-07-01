@@ -1,0 +1,22 @@
+{
+    "CodeGPT.apiKey": "OpenAI",
+    "python.analysis.extraPaths": [
+        // "./homework/hw0/src",
+        // "./homework/hw1/python",
+        "./homework/hw2/python",
+        "venv/lib64/python3.11/site-packages"
+    ],
+    "files.associations": {
+        "iostream": "cpp",
+        "cmath": "cpp"
+    },
+    "workbench.colorCustomizations": {
+        "[Red]": {},
+        "editor.selectionBackground": "#a29797",
+        "editor.selectionHighlightBackground": "#a29797",
+        "editor.wordHighlightBackground": "#a29797",
+        "activityBar.background": "#2A2D3C",
+        "titleBar.activeBackground": "#3A3E54",
+        "titleBar.activeForeground": "#FAFAFB"
+    }
+}

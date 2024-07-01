@@ -6,6 +6,7 @@ try:
 except:
     pass
 
+import matplotlib.pyplot as plt
 
 def add(x, y):
     """ A trivial 'add' function you should implement to get used to the
@@ -205,17 +206,24 @@ def loss_err(h,y):
 def train_softmax(X_tr, y_tr, X_te, y_te, epochs=10, lr=0.5, batch=100,
                   cpp=False):
     """ Example function to fully train a softmax regression classifier """
+    # theta: 784 * 10
     theta = np.zeros((X_tr.shape[1], y_tr.max()+1), dtype=np.float32)
+
     print("| Epoch | Train Loss | Train Err | Test Loss | Test Err |")
+
     for epoch in range(epochs):
-        if not cpp:
-            softmax_regression_epoch(X_tr, y_tr, theta, lr=lr, batch=batch)
-        else:
-            softmax_regression_epoch_cpp(X_tr, y_tr, theta, lr=lr, batch=batch)
         train_loss, train_err = loss_err(X_tr @ theta, y_tr)
         test_loss, test_err = loss_err(X_te @ theta, y_te)
         print("|  {:>4} |    {:.5f} |   {:.5f} |   {:.5f} |  {:.5f} |"\
               .format(epoch, train_loss, train_err, test_loss, test_err))
+
+        if not cpp:
+            softmax_regression_epoch(X_tr, y_tr, theta, lr=lr, batch=batch)
+        else:
+            softmax_regression_epoch_cpp(X_tr, y_tr, theta, lr=lr, batch=batch)
+
+    np.savetxt('theta.csv', theta, delimiter=',')
+    np.save('theta.npy', theta)
 
 
 def train_nn(X_tr, y_tr, X_te, y_te, hidden_dim = 500,
@@ -227,20 +235,36 @@ def train_nn(X_tr, y_tr, X_te, y_te, hidden_dim = 500,
     W2 = np.random.randn(hidden_dim, k).astype(np.float32) / np.sqrt(k)
 
     print("| Epoch | Train Loss | Train Err | Test Loss | Test Err |")
+
     for epoch in range(epochs):
-        nn_epoch(X_tr, y_tr, W1, W2, lr=lr, batch=batch)
         train_loss, train_err = loss_err(np.maximum(X_tr@W1,0)@W2, y_tr) # np.maximum: ReLU
         test_loss, test_err = loss_err(np.maximum(X_te@W1,0)@W2, y_te)
         print("|  {:>4} |    {:.5f} |   {:.5f} |   {:.5f} |  {:.5f} |"\
               .format(epoch, train_loss, train_err, test_loss, test_err))
+        nn_epoch(X_tr, y_tr, W1, W2, lr=lr, batch=batch)
 
 
 
 if __name__ == "__main__":
+    # X_tr 60000 * 784
     X_tr, y_tr = parse_mnist("/home/zhuyangyang/Course/CMU10_414/homework/hw0/data/train-images-idx3-ubyte.gz",
                              "/home/zhuyangyang/Course/CMU10_414/homework/hw0/data/train-labels-idx1-ubyte.gz")
+    # X_te 10000 * 784
     X_te, y_te = parse_mnist("/home/zhuyangyang/Course/CMU10_414/homework/hw0/data/t10k-images-idx3-ubyte.gz",
                              "/home/zhuyangyang/Course/CMU10_414/homework/hw0/data/t10k-labels-idx1-ubyte.gz")
+
+
+    # indices = range(10)
+    #
+    # plt.figure(figsize=(10, 1.5))  # Adjust figure size
+    #
+    # for i, idx in enumerate(indices):
+    #     image = X_tr[idx].reshape(28, 28)  # Reshape vector back to 28x28
+    #     plt.subplot(1, len(indices), i + 1)
+    #     plt.imshow(image, cmap='gray')
+    #     plt.axis('off')
+    #
+    # plt.show()
 
     print("Training softmax regression")
     train_softmax(X_tr, y_tr, X_te, y_te, epochs=10, lr = 0.1)

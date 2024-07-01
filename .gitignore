@@ -1,0 +1,6 @@
+venv
+mugrade
+data
+__pycache__
+*.so
+!homework/hw2/python/needle/data
