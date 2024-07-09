@@ -177,6 +177,25 @@ def reshape(a, shape):
     return Reshape(shape)(a)
 
 
+# class BroadcastTo(TensorOp):
+#     def __init__(self, shape):
+#         self.shape = shape
+# 
+#     def compute(self, a):
+#         return array_api.broadcast_to(a, self.shape)
+# 
+#     def gradient(self, out_grad, node):
+#         # the len of out_grad.shape(self.shape) usually >= node.inputs[0].shape
+#         # sum along the axis that not equal
+#         shape1, shape2 = self.shape, node.inputs[0].shape
+#         axis = []
+#         len1 = len(shape1)
+#         len2 = len(shape2)
+#         for i in range(len1):
+#             if i >= len2 or shape1[i] != shape2[i]:
+#                 axis.append(i)
+#         return reshape(summation(out_grad, axes=tuple(axis)), node.inputs[0].shape)
+
 class BroadcastTo(TensorOp):
     def __init__(self, shape):
         self.shape = shape
@@ -188,13 +207,15 @@ class BroadcastTo(TensorOp):
         # the len of out_grad.shape(self.shape) usually >= node.inputs[0].shape
         # sum along the axis that not equal
         shape1, shape2 = self.shape, node.inputs[0].shape
-        axis = []
         len1 = len(shape1)
         len2 = len(shape2)
+        shape2_prepend = [1] * (len1 - len2) + list(shape2)  #prepend 1s to shape2 if len1 != len2, refer the broadcasting rule
+        axis = []
         for i in range(len1):
-            if i >= len2 or shape1[i] != shape2[i]:
+            if shape1[i] != shape2_prepend[i]:
                 axis.append(i)
         return reshape(summation(out_grad, axes=tuple(axis)), node.inputs[0].shape)
+
 
 
 def broadcast_to(a, shape):

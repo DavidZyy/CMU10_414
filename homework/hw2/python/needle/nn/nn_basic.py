@@ -88,12 +88,36 @@ class Linear(Module):
         self.out_features = out_features
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # raise NotImplementedError()
+        self.weight = init.kaiming_uniform(in_features, out_features, device=device, dtype=dtype, requires_grad=True)
+        # bias should be one dimension
+        if bias:
+            # no need to pass in 1 for fan_out, or I need a transpose
+            self.bias = init.kaiming_uniform(1,  out_features, device=device, dtype=dtype, requires_grad=True)
+        else:
+            self.bias = None
         ### END YOUR SOLUTION
 
+    # X (N, H_in)
+    # W (H_in, H_out)
+    # bias (H_out)
     def forward(self, X: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # raise NotImplementedError()
+        if self.bias is not None:
+            # for debug convenience
+            '''
+            maybe should check the shape of X and weight here! do broadcast_to 
+            explicitly, not do it implicitly in numpy.
+            '''
+            temp1 = ops.matmul(X, self.weight)
+            temp2 = ops.broadcast_to(self.bias, temp1.shape)
+            temp3 = ops.add(temp1, temp2)
+            result = temp3
+        else:
+            temp1 = ops.matmul(X, self.weight)
+            result = temp1
+        return result
         ### END YOUR SOLUTION
 
 
@@ -107,7 +131,9 @@ class Flatten(Module):
 class ReLU(Module):
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        temp1 = ops.relu(x)
+        result = temp1
+        return result
         ### END YOUR SOLUTION
 
 
@@ -118,7 +144,9 @@ class Sequential(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        for module in self.modules:
+            x = module(x)
+        return x
         ### END YOUR SOLUTION
 
 

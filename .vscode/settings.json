@@ -4,7 +4,8 @@
         // "./homework/hw0/src",
         // "./homework/hw1/python",
         "./homework/hw2/python",
-        "venv/lib64/python3.11/site-packages"
+        "venv/lib64/python3.11/site-packages",
+        "./homework/hw2/python/needle/ops",
     ],
     "files.associations": {
         "iostream": "cpp",

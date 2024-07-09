@@ -21,8 +21,9 @@ def xavier_normal(fan_in, fan_out, gain=1.0, **kwargs):
 def kaiming_uniform(fan_in, fan_out, nonlinearity="relu", **kwargs):
     assert nonlinearity == "relu", "Only relu supported currently"
     ### BEGIN YOUR SOLUTION
+    divisor = fan_out if (fan_in == 1) else fan_in
     gain = math.sqrt(2)
-    bound = gain * math.sqrt(3 / fan_in)
+    bound = gain * math.sqrt(3 / divisor)
     result = rand(fan_in, fan_out, low=-bound, high=bound, **kwargs)
     return result
     ### END YOUR SOLUTION

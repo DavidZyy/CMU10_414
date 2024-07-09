@@ -129,7 +129,9 @@ def softmax_loss_forward(rows, classes):
     x = get_tensor(rows, classes)
     y = get_int_tensor(rows, low=0, high=classes)
     f = ndl.nn.SoftmaxLoss()
-    return np.array(f(x, y).cached_data)
+    result = f(x, y).cached_data
+    return result
+    # return np.array(f(x, y).cached_data)
 
 
 def softmax_loss_backward(rows, classes):
@@ -346,7 +348,10 @@ def logsumexp_forward(shape, axes):
 
 def logsumexp_backward(shape, axes):
     x = get_tensor(*shape)
-    y = (ndl.ops.logsumexp(x, axes=axes) ** 2).sum()
+    temp1 = ndl.ops.logsumexp(x, axes=axes)
+    temp2 = temp1 ** 2
+    y = temp2.sum()
+    # y = (ndl.ops.logsumexp(x, axes=axes) ** 2).sum()
     y.backward()
     return x.grad.cached_data
 
