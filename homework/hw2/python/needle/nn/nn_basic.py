@@ -150,10 +150,29 @@ class Sequential(Module):
         ### END YOUR SOLUTION
 
 
+# how to get softmaxloss from LogSumExp?
+# see: https://blog.csdn.net/yjw123456/article/details/121869249
 class SoftmaxLoss(Module):
     def forward(self, logits: Tensor, y: Tensor):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # explicitly call broadcast
+        temp1 = ops.logsumexp(logits, axes=(1,))
+        a = list(temp1.shape)
+        a.append(1)
+        a = tuple(a)
+        temp2 = ops.reshape(temp1, a)
+        temp3 = ops.broadcast_to(temp2, logits.shape)
+        temp4 = logits - temp3
+        temp5 = ops.exp(temp4)  # softmax: exp_Z / exp_sum
+
+        y_one_hot = init.one_hot(logits.shape[1], y)
+        temp6 = temp5 * y_one_hot
+        temp7 = ops.summation(temp6, axes=(1,))
+        temp8 = -ops.log(temp7)
+        temp9 = ops.summation(temp8) / logits.shape[0]
+
+        return temp9
+        # raise NotImplementedError()
         ### END YOUR SOLUTION
 
 
