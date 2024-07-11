@@ -209,20 +209,40 @@ class Summation(TensorOp):
     def __init__(self, axes: Optional[tuple] = None):
         self.axes = axes
 
+    # NOTE the summation method not keep dimension, so if we need to recover Tensor's original shape
+    # when backward, should reshape and then broadcast, for example:
+    # (3, 3) --summation(axes = (1,)) --> (3,)
+    # (3,) --reshape--> (3,1) --broadcast--> (3,3)
     def compute(self, a):
         return array_api.sum(a, self.axes, keepdims=False)
 
+    # def gradient(self, out_grad, node):
+    #     input_shape = node.inputs[0].shape
+    #     output_shape = out_grad.shape
+    #     reshape_shape = []
+    #     for i in input_shape:
+    #         if i in output_shape:
+    #             reshape_shape.append(i)
+    #         else:
+    #             reshape_shape.append(1)
+    #     return broadcast_to(reshape(out_grad, reshape_shape), input_shape)
     def gradient(self, out_grad, node):
         input_shape = node.inputs[0].shape
-        output_shape = out_grad.shape
-        reshape_shape = []
-        for i in input_shape:
-            if i in output_shape:
-                reshape_shape.append(i)
-            else:
-                reshape_shape.append(1)
-        return broadcast_to(reshape(out_grad, reshape_shape), input_shape)
+        input_shape_list = list(input_shape)
 
+        if self.axes is None:
+            for i in range(len(input_shape)):
+                input_shape_list[i] = 1
+        else:
+            for i in self.axes:
+                input_shape_list[i] = 1
+
+        reshape_shape = tuple(input_shape_list)
+        temp1 = reshape(out_grad, reshape_shape)
+        result = broadcast_to(temp1, input_shape)
+
+        return result
+    
 
 def summation(a, axes=None):
     return Summation(axes)(a)
