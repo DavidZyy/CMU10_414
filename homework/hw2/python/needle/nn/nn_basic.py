@@ -124,7 +124,12 @@ class Linear(Module):
 class Flatten(Module):
     def forward(self, X):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # shape is a tuple
+        old_shape = X.shape
+        new_shape = (old_shape[0], np.prod(old_shape[1:]))
+        result = ops.reshape(X, new_shape)
+        return result
+        # raise NotImplementedError()
         ### END YOUR SOLUTION
 
 
@@ -183,12 +188,60 @@ class BatchNorm1d(Module):
         self.eps = eps
         self.momentum = momentum
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.weight = Parameter(init.ones(dim, device=device, dtype=dtype, requires_grad=True))
+        self.bias = Parameter(init.zeros(dim, device=device, dtype=dtype, requires_grad=True))
+
+        self.running_mean = init.zeros(dim, device=device, dtype=dtype, requires_grad=False) # (dim, )
+        self.running_var = init.ones(dim, device=device, dtype=dtype, requires_grad=False) # (dim, )
+        # raise NotImplementedError()
         ### END YOUR SOLUTION
 
+    # not the calculation is along the batch dimension, which is different from LayerNorm1d
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        n = x.shape[0]
+        k = x.shape[1]
+        if self.training:
+            temp1 = ops.summation(x, axes=(0,))  # (k, )
+            temp2 = ops.reshape(temp1, (1, k))  # (1, k)
+            temp3 = ops.broadcast_to(temp2, x.shape)  # (n, k)
+            batch_mean_n_k = temp3 / n
+            batch_mean_k = temp1 / n
+
+            temp4 = x - batch_mean_n_k
+            temp5 = ops.power_scalar(temp4, 2)
+            temp6 = ops.summation(temp5, axes=(0,))  # (k, )
+            batch_var_k = temp6 / n
+
+            self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * batch_mean_k
+            self.running_var = (1 - self.momentum) * self.running_var + self.momentum * batch_var_k
+
+            mean = batch_mean_k
+            var = batch_var_k
+        else:
+            mean = self.running_mean
+            var = self.running_var
+        
+        temp7 = ops.reshape(mean, (1, k))
+        temp8 = ops.broadcast_to(temp7, x.shape)  # E(x)
+
+        temp9 = ops.reshape(var, (1, k))
+        temp10 = ops.broadcast_to(temp9, x.shape)  # var(x)
+
+        temp11 = temp10 + self.eps
+        temp12 = ops.power_scalar(temp11, 0.5)
+
+        temp13 = x - temp8
+
+        temp14 = ops.divide(temp13, temp12)
+
+        temp15 = ops.broadcast_to(self.weight, x.shape)
+        temp16 = ops.broadcast_to(self.bias, x.shape)
+
+        result = temp15 * temp14 + temp16
+        return result
+
+        # raise NotImplementedError()
         ### END YOUR SOLUTION
 
 
@@ -199,8 +252,8 @@ class LayerNorm1d(Module):
         self.eps = eps
         ### BEGIN YOUR SOLUTION
         # raise NotImplementedError()
-        self.weight = init.ones(dim, device=device, dtype=dtype, requires_grad=True)
-        self.bias = init.zeros(dim, device=device, dtype=dtype, requires_grad=True)
+        self.weight = Parameter(init.ones(dim, device=device, dtype=dtype, requires_grad=True))
+        self.bias = Parameter(init.zeros(dim, device=device, dtype=dtype, requires_grad=True))
         ### END YOUR SOLUTION
 
     def forward(self, x: Tensor) -> Tensor:
