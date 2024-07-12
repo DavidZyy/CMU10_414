@@ -21,33 +21,21 @@ class SGD(Optimizer):
         self.lr = lr
         self.momentum = momentum
         self.u = {param: 0 for param in self.params}
-        # self.u = defaultdict(float)
         self.weight_decay = weight_decay
 
     def step(self):
-        ### BEGIN YOUR SOLUTION
         for param in self.params:
             if param.grad is None:
                 continue
 
-            # use grad.data to pass memory test
-            grad = param.grad.data
-            # Apply weight decay (L2 regularization)
             if self.weight_decay != 0:
-                # grad += self.weight_decay * grad
-                grad = param.grad.data + self.weight_decay * param.data.data
-                # grad = grad + self.weight_decay * grad  # precision loss
-
-            # Momentum update
-            if self.momentum != 0:
-                self.u[param] = self.momentum * self.u[param] + (1 - self.momentum) * grad
-                param_update = self.u[param]
+                grad = param.grad.data + self.weight_decay * param.data
             else:
-                param_update = grad
+                grad = param.grad.data
 
-            # Update parameter
-            param.data -= self.lr * param_update
-        ### END YOUR SOLUTION
+            self.u[param] = self.momentum * self.u[param] + (1 - self.momentum) * grad
+
+            param.data -= self.lr * self.u[param]
 
     def clip_grad_norm(self, max_norm=0.25):
         """
@@ -76,10 +64,26 @@ class Adam(Optimizer):
         self.weight_decay = weight_decay
         self.t = 0
 
-        self.m = {}
-        self.v = {}
+        # self.m = {}
+        self.u = {param: 0 for param in self.params}
+        self.v = {param: 0 for param in self.params}
 
     def step(self):
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        self.t += 1
+        for param in self.params:
+            if param.grad is None:
+                continue
+            
+            if self.weight_decay != 0:
+                grad = param.grad.data + self.weight_decay * param.data
+            else:
+                grad = param.grad.data
+
+            self.u[param] = self.beta1 * self.u[param] + (1 - self.beta1) * grad
+            self.v[param] = self.beta2 * self.v[param] + (1 - self.beta2) * (grad ** 2)
+
+            u_hat = self.u[param] / (1 - self.beta1 ** self.t)
+            v_hat = self.v[param] / (1 - self.beta2 ** self.t)
+
+            # param.data -= self.lr * u_hat / (v_hat ** 0.5 + self.eps)
+            param.data = param.data - self.lr * u_hat / (v_hat ** 0.5 + self.eps)

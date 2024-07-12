@@ -192,8 +192,8 @@ class BatchNorm1d(Module):
         self.weight = Parameter(init.ones(dim, device=device, dtype=dtype, requires_grad=True))
         self.bias = Parameter(init.zeros(dim, device=device, dtype=dtype, requires_grad=True))
 
-        self.running_mean = init.zeros(dim, device=device, dtype=dtype, requires_grad=False) # (dim, )
-        self.running_var = init.ones(dim, device=device, dtype=dtype, requires_grad=False) # (dim, )
+        self.running_mean = init.zeros(dim, device=device, dtype=dtype, requires_grad=False)  # (dim, )
+        self.running_var = init.ones(dim, device=device, dtype=dtype, requires_grad=False)  # (dim, )
         # raise NotImplementedError()
         ### END YOUR SOLUTION
 
@@ -214,8 +214,10 @@ class BatchNorm1d(Module):
             temp6 = ops.summation(temp5, axes=(0,))  # (k, )
             batch_var_k = temp6 / n
 
-            self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * batch_mean_k
-            self.running_var = (1 - self.momentum) * self.running_var + self.momentum * batch_var_k
+            # very interesting here, if not use .data method of batch mean and var here, the test memory of
+            # adam optimizer will fail.
+            self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * batch_mean_k.data
+            self.running_var = (1 - self.momentum) * self.running_var + self.momentum * batch_var_k.data
 
             mean = batch_mean_k
             var = batch_var_k
