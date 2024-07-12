@@ -89,11 +89,11 @@ class Linear(Module):
 
         ### BEGIN YOUR SOLUTION
         # raise NotImplementedError()
-        self.weight = init.kaiming_uniform(in_features, out_features, device=device, dtype=dtype, requires_grad=True)
+        self.weight = Parameter(init.kaiming_uniform(in_features, out_features, device=device, dtype=dtype, requires_grad=True))
         # bias should be one dimension
         if bias:
             # no need to pass in 1 for fan_out, or I need a transpose
-            self.bias = init.kaiming_uniform(1,  out_features, device=device, dtype=dtype, requires_grad=True)
+            self.bias = Parameter(init.kaiming_uniform(1,  out_features, device=device, dtype=dtype, requires_grad=True))
         else:
             self.bias = None
         ### END YOUR SOLUTION
@@ -174,9 +174,10 @@ class SoftmaxLoss(Module):
         temp6 = temp5 * y_one_hot
         temp7 = ops.summation(temp6, axes=(1,))
         temp8 = -ops.log(temp7)
-        temp9 = ops.summation(temp8) / logits.shape[0]
+        temp9 = ops.summation(temp8)
+        temp10 = temp9 / logits.shape[0]
 
-        return temp9
+        return temp10
         # raise NotImplementedError()
         ### END YOUR SOLUTION
 
@@ -295,7 +296,17 @@ class Dropout(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if self.training:
+            # Create a mask with the same shape as x, with elements 0 with probability p and 1 with probability (1 - p)
+            mask = np.random.binomial(1, 1 - self.p, size=x.shape)
+            mask_tensor = Tensor(mask)
+            # Scale the output by 1 / (1 - p)
+            temp1 = x * mask_tensor
+            result = temp1 / (1 - self.p)
+            return result
+        else:
+            return x
+        # raise NotImplementedError()
         ### END YOUR SOLUTION
 
 
@@ -306,5 +317,6 @@ class Residual(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return x + self.fn(x)
+        # raise NotImplementedError()
         ### END YOUR SOLUTION

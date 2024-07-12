@@ -18,7 +18,7 @@ import numpy as array_api
 
 class EWiseAdd(TensorOp):
     def compute(self, a: NDArray, b: NDArray):
-        return a + b
+        return (a + b).astype(a.dtype)
 
     def gradient(self, out_grad: Tensor, node: Tensor):
         return out_grad, out_grad
@@ -33,7 +33,7 @@ class AddScalar(TensorOp):
         self.scalar = scalar
 
     def compute(self, a: NDArray):
-        return a + self.scalar
+        return (a + self.scalar).astype(a.dtype)
 
     def gradient(self, out_grad: Tensor, node: Tensor):
         return out_grad
@@ -61,7 +61,7 @@ class MulScalar(TensorOp):
         self.scalar = scalar
 
     def compute(self, a: NDArray):
-        return a * self.scalar
+        return (a * self.scalar).astype(a.dtype)
 
     def gradient(self, out_grad: Tensor, node: Tensor):
         return (out_grad * self.scalar,)
@@ -78,7 +78,7 @@ class PowerScalar(TensorOp):
         self.scalar = scalar
 
     def compute(self, a: NDArray) -> NDArray:
-        return a ** self.scalar
+        return (a ** self.scalar).astype(a.dtype)
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
@@ -134,7 +134,7 @@ class DivScalar(TensorOp):
         self.scalar = scalar
 
     def compute(self, a):
-        return a / self.scalar
+        return (a / self.scalar).astype(a.dtype)
 
     def gradient(self, out_grad, node):
         return (out_grad * 1/self.scalar,)

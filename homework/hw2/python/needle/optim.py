@@ -20,12 +20,33 @@ class SGD(Optimizer):
         super().__init__(params)
         self.lr = lr
         self.momentum = momentum
-        self.u = {}
+        self.u = {param: 0 for param in self.params}
+        # self.u = defaultdict(float)
         self.weight_decay = weight_decay
 
     def step(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        for param in self.params:
+            if param.grad is None:
+                continue
+
+            # use grad.data to pass memory test
+            grad = param.grad.data
+            # Apply weight decay (L2 regularization)
+            if self.weight_decay != 0:
+                # grad += self.weight_decay * grad
+                grad = param.grad.data + self.weight_decay * param.data.data
+                # grad = grad + self.weight_decay * grad  # precision loss
+
+            # Momentum update
+            if self.momentum != 0:
+                self.u[param] = self.momentum * self.u[param] + (1 - self.momentum) * grad
+                param_update = self.u[param]
+            else:
+                param_update = grad
+
+            # Update parameter
+            param.data -= self.lr * param_update
         ### END YOUR SOLUTION
 
     def clip_grad_norm(self, max_norm=0.25):
