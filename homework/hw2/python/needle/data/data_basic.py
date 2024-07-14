@@ -4,7 +4,6 @@ from ..autograd import Tensor
 from typing import Iterator, Optional, List, Sized, Union, Iterable, Any
 
 
-
 class Dataset:
     r"""An abstract class representing a `Dataset`.
 
@@ -55,17 +54,32 @@ class DataLoader:
         self.shuffle = shuffle
         self.batch_size = batch_size
         if not self.shuffle:
-            self.ordering = np.array_split(np.arange(len(dataset)), 
+            self.ordering = np.array_split(np.arange(len(dataset)),
                                            range(batch_size, len(dataset), batch_size))
 
     def __iter__(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # raise NotImplementedError()
+        self.current_batch_index = -1
+        if self.shuffle:
+            self.ordering = np.array_split(np.random.permutation(len(self.dataset)),
+                                           range(self.batch_size, len(self.dataset), self.batch_size))
         ### END YOUR SOLUTION
         return self
 
     def __next__(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.current_batch_index += 1
+        if self.current_batch_index >= len(self.ordering):
+            raise StopIteration
+
+        batch_indices = self.ordering[self.current_batch_index]
+        batch = [self.dataset[idx] for idx in batch_indices]
+
+        # j = 0: stack batch[i][0]: merge many images arrays into 1 Tensor.
+        # j = 1: stack batck[i][1]: merge many labels arrays into 1 Tensor.
+        result = [Tensor(np.stack([batch[i][j] for i in range(len(batch))])) for j in range(len(batch[0]))]
+
+        return result
         ### END YOUR SOLUTION
 

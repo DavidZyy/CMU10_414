@@ -10686,8 +10686,10 @@ def submit_random_crop():
 
 def test_mnist_dataset():
     # Test dataset sizing
+    path = "/home/zhuyangyang/Course/CMU10_414/homework/hw2/data/"
+    # path = "data/"
     mnist_train_dataset = ndl.data.MNISTDataset(
-        "data/train-images-idx3-ubyte.gz", "data/train-labels-idx1-ubyte.gz"
+        path+"train-images-idx3-ubyte.gz", path+"train-labels-idx1-ubyte.gz"
     )
     assert len(mnist_train_dataset) == 60000
 
@@ -10721,7 +10723,7 @@ def test_mnist_dataset():
     np.testing.assert_allclose(sample_labels, compare_labels)
 
     mnist_train_dataset = ndl.data.MNISTDataset(
-        "data/t10k-images-idx3-ubyte.gz", "data/t10k-labels-idx1-ubyte.gz"
+        path+"t10k-images-idx3-ubyte.gz", path+"t10k-labels-idx1-ubyte.gz"
     )
     assert len(mnist_train_dataset) == 10000
 
@@ -10749,8 +10751,8 @@ def test_mnist_dataset():
     np.random.seed(0)
     tforms = [ndl.data.RandomCrop(28), ndl.data.RandomFlipHorizontal()]
     mnist_train_dataset = ndl.data.MNISTDataset(
-        "data/train-images-idx3-ubyte.gz",
-        "data/train-labels-idx1-ubyte.gz",
+        path+"train-images-idx3-ubyte.gz",
+        path+"train-labels-idx1-ubyte.gz",
         transforms=tforms,
     )
 
@@ -10777,8 +10779,8 @@ def test_mnist_dataset():
     # test a transform
     tforms = [ndl.data.RandomCrop(12), ndl.data.RandomFlipHorizontal(0.4)]
     mnist_train_dataset = ndl.data.MNISTDataset(
-        "data/train-images-idx3-ubyte.gz",
-        "data/train-labels-idx1-ubyte.gz",
+        path+"train-images-idx3-ubyte.gz",
+        path+"train-labels-idx1-ubyte.gz",
         transforms=tforms,
     )
     sample_norms = np.array(
@@ -10840,9 +10842,11 @@ def submit_mnist_dataset():
 
 
 def test_dataloader_mnist():
+    path = "/home/zhuyangyang/Course/CMU10_414/homework/hw2/data/"
+
     batch_size = 1
     mnist_train_dataset = ndl.data.MNISTDataset(
-        "data/train-images-idx3-ubyte.gz", "data/train-labels-idx1-ubyte.gz"
+        path+"train-images-idx3-ubyte.gz", path+"train-labels-idx1-ubyte.gz"
     )
     mnist_train_dataloader = ndl.data.DataLoader(
         dataset=mnist_train_dataset, batch_size=batch_size, shuffle=False
@@ -10859,7 +10863,7 @@ def test_dataloader_mnist():
 
     batch_size = 5
     mnist_test_dataset = ndl.data.MNISTDataset(
-        "data/t10k-images-idx3-ubyte.gz", "data/t10k-labels-idx1-ubyte.gz"
+        path+"t10k-images-idx3-ubyte.gz", path+"t10k-labels-idx1-ubyte.gz"
     )
     mnist_test_dataloader = ndl.data.DataLoader(
         dataset=mnist_test_dataset, batch_size=batch_size, shuffle=False
