@@ -120,7 +120,7 @@ def train_mnist(
     )
     for _ in range(epochs):
         train_err, train_loss = epoch(mnist_train_dataloader, model, opt)
-    test_err, test_loss = epoch(mnist_test_dataloader, model, opt)
+    test_err, test_loss = epoch(mnist_test_dataloader, model, None)
     return train_err, train_loss, test_err, test_loss
     ### END YOUR SOLUTION
 

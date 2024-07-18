@@ -387,31 +387,31 @@ def residual_block_forward(dim, hidden_dim, norm, drop_prob):
     output_tensor = ResidualBlock(dim, hidden_dim, norm, drop_prob)(input_tensor)
     return output_tensor.numpy()
 
-def residual_block_forward2(dim, hidden_dim, norm, drop_prob):
-    np.random.seed(2)
-    input_tensor = ndl.Tensor(np.random.randn(1, dim))
-    l1 = nn.Linear(dim, hidden_dim)
-    l2 = norm(hidden_dim)
-    l3 = nn.ReLU()
-    l4 = nn.Dropout(drop_prob)
-    l5 = nn.Linear(hidden_dim, dim)
-    l6 = norm(dim)
-
-    temp1 = l1(input_tensor)
-    temp2 = l2(temp1)
-    temp3 = l3(temp2)
-    temp4 = l4(temp3)
-    temp5 = l5(temp4)
-    temp6 = l6(temp5)
-
-    temp7 = temp6 + input_tensor
-    output_tensor1 = l3(temp7)
-
-    func = ResidualBlock(dim, hidden_dim, norm, drop_prob)
-    output_tensor2 = func(input_tensor)
-
-    output_tensor1 += output_tensor2
-    return output_tensor1.numpy()
+# def residual_block_forward2(dim, hidden_dim, norm, drop_prob):
+#     np.random.seed(2)
+#     input_tensor = ndl.Tensor(np.random.randn(1, dim))
+#     l1 = nn.Linear(dim, hidden_dim)
+#     l2 = norm(hidden_dim)
+#     l3 = nn.ReLU()
+#     l4 = nn.Dropout(drop_prob)
+#     l5 = nn.Linear(hidden_dim, dim)
+#     l6 = norm(dim)
+#
+#     temp1 = l1(input_tensor)
+#     temp2 = l2(temp1)
+#     temp3 = l3(temp2)
+#     temp4 = l4(temp3)
+#     temp5 = l5(temp4)
+#     temp6 = l6(temp5)
+#
+#     temp7 = temp6 + input_tensor
+#     output_tensor1 = l3(temp7)
+#
+#     func = ResidualBlock(dim, hidden_dim, norm, drop_prob)
+#     output_tensor2 = func(input_tensor)
+#
+#     output_tensor1 += output_tensor2
+#     return output_tensor1.numpy()
 
 def mlp_resnet_num_params(dim, hidden_dim, num_blocks, num_classes, norm):
     model = MLPResNet(dim, hidden_dim, num_blocks, num_classes, norm)
@@ -2274,7 +2274,7 @@ def test_mlp_residual_block_num_params_2():
 
 def test_mlp_residual_block_forward_1():
     np.testing.assert_allclose(
-        residual_block_forward2(15, 10, nn.LayerNorm1d, 0.5),
+        residual_block_forward(15, 10, nn.LayerNorm1d, 0.5),
         np.array(
             [
                 [

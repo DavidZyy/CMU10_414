@@ -300,8 +300,9 @@ class Dropout(Module):
         ### BEGIN YOUR SOLUTION
         if self.training:
             # Create a mask with the same shape as x, with elements 0 with probability p and 1 with probability (1 - p)
-            mask = np.random.binomial(1, 1 - self.p, size=x.shape)
-            mask_tensor = Tensor(mask)
+            # mask = np.random.binomial(1, 1 - self.p, size=x.shape)
+            # mask_tensor = Tensor(mask)
+            mask_tensor = init.randb(*x.shape, p=1-self.p)
             # Scale the output by 1 / (1 - p)
             temp1 = x * mask_tensor
             result = temp1 / (1 - self.p)
