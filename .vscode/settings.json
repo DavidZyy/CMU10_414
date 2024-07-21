@@ -3,9 +3,10 @@
     "python.analysis.extraPaths": [
         // "./homework/hw0/src",
         // "./homework/hw1/python",
-        "./homework/hw2/python",
+        "./homework/hw3/python",
         "venv/lib64/python3.11/site-packages",
-        "./homework/hw2/python/needle/ops",
+        "./homework/hw3/python/needle/ops",
+        "./homework/hw3/python/needle",
     ],
     "files.associations": {
         "iostream": "cpp",

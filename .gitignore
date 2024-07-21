@@ -4,3 +4,5 @@ data
 __pycache__
 *.so
 !homework/hw2/python/needle/data
+!homework/hw3/python/needle/data
+homework/hw3/build

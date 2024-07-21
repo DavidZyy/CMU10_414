@@ -1,11 +1,13 @@
 """Core data structures."""
 import needle
+# import python.needle
 from .backend_numpy import Device, cpu, all_devices
 from typing import List, Optional, NamedTuple, Tuple, Union
 from collections import namedtuple
 import numpy
 
 from needle import init
+# from python.needle import init
 
 # needle version
 LAZY_MODE = False
