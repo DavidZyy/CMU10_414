@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -5,6 +6,7 @@
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 
 namespace needle {
 namespace cpu {
@@ -62,7 +64,41 @@ void Compact(const AlignedArray& a, AlignedArray* out, std::vector<int32_t> shap
    *  function will implement here, so we won't repeat this note.)
    */
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  // std::cout<< "hhhhhhhhdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" << std::endl;
+  // assert(false && "Not Implemented");
+  // assert(true && "Not Implemented");
+//   std::cout<< "Compact" << std::endl;
+  std::vector<int32_t> idxVec(shape.size(), 0);
+  int32_t num = 1;
+  for (auto dim : shape) {
+    num *= dim;
+  }
+
+  std::cout << std::endl;
+  std::cout << "num: " << num << std::endl;
+
+  int32_t cnt = 0;
+  for (int i=0; i < num; i++) {
+    int32_t idx = 0;
+    for (int j=0; j < idxVec.size(); j++) {
+      idx += idxVec[j] * strides[j];
+    }
+    idx += offset;
+
+    out->ptr[cnt++] = a.ptr[idx];
+
+    // carry
+    for (int j=idxVec.size()-1; j >= 0; j--) {
+      if (idxVec[j] < shape[j] - 1) {
+        idxVec[j]++;
+        break;
+      } else {
+        idxVec[j] = 0;
+      }
+    }
+  }
+
+
   /// END SOLUTION
 }
 
@@ -79,7 +115,33 @@ void EwiseSetitem(const AlignedArray& a, AlignedArray* out, std::vector<int32_t>
    *   offset: offset of the *out* array (not a, which has zero offset, being compact)
    */
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  // assert(false && "Not Implemented");
+  std::vector<int32_t> idxVec(shape.size(), 0);
+  int num = 1;
+  for (auto dim : shape) {
+    num *= dim;
+  }
+
+  int32_t cnt = 0;
+  for (int i=0; i < num; i++) {
+    int32_t idx = 0;
+    for (int j=0; j < idxVec.size(); j++) {
+      idx += idxVec[j] * strides[j];
+    }
+    idx += offset;
+
+    out->ptr[idx] = a.ptr[cnt++];
+
+    // carry
+    for (int j=idxVec.size()-1; j >= 0; j--) {
+      if (idxVec[j] < shape[j] - 1){
+        idxVec[j]++;
+        break;
+      } else {
+        idxVec[j] = 0;
+      }
+    }
+  }
   /// END SOLUTION
 }
 
@@ -100,7 +162,29 @@ void ScalarSetitem(const size_t size, scalar_t val, AlignedArray* out, std::vect
    */
 
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  // assert(false && "Not Implemented");
+
+  std::vector<int32_t> idxVec(shape.size(), 0);
+
+  for (int i=0; i < size; i++) {
+    int32_t idx = 0;
+    for (int j=0; j < idxVec.size(); j++) {
+      idx += idxVec[j] * strides[j];
+    }
+    idx += offset;
+
+    out->ptr[idx] = val;
+
+    // carry
+    for (int j=idxVec.size()-1; j >= 0; j--) {
+      if (idxVec[j] < shape[j] - 1){
+        idxVec[j]++;
+        break;
+      } else {
+        idxVec[j] = 0;
+      }
+    }
+  }
   /// END SOLUTION
 }
 
