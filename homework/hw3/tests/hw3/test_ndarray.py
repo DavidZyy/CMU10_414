@@ -203,6 +203,7 @@ def test_setitem_scalar(params, device):
 
 
 matmul_tiled_shapes = [(1, 1, 1), (2, 2, 3), (1, 2, 1), (3, 3, 3)]
+# matmul_tiled_shapes = [(2, 2, 2)]
 
 
 @pytest.mark.parametrize("m,n,p", matmul_tiled_shapes)
@@ -212,6 +213,9 @@ def test_matmul_tiled(m, n, p):
     t = device.__tile_size__
     A = nd.array(np.random.randn(m, n, t, t), device=nd.cpu())
     B = nd.array(np.random.randn(n, p, t, t), device=nd.cpu())
+    # A = nd.array(np.ones((m, n, t, t)), device=nd.cpu())
+    # B = nd.array(np.ones((n, p, t, t)), device=nd.cpu())
+
     C = nd.NDArray.make((m, p, t, t), device=nd.cpu())
     device.matmul_tiled(A._handle, B._handle, C._handle, m * t, n * t, p * t)
 

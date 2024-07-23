@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cstdio>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -13,6 +14,7 @@ namespace cpu {
 
 #define ALIGNMENT 256
 #define TILE 8
+// #define TILE 2
 typedef float scalar_t;
 const size_t ELEM_SIZE = sizeof(scalar_t);
 
@@ -327,7 +329,16 @@ void Matmul(const AlignedArray& a, const AlignedArray& b, AlignedArray* out, uin
    */
 
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  // assert(false && "Not Implemented");
+  for (int i=0; i < m; i++) {
+    for (int j=0; j < p; j++) {
+      scalar_t sum = 0;
+      for (int k=0; k < n; k++) {
+        sum += a.ptr[i*n + k] * b.ptr[k*p + j];
+      }
+      out->ptr[i*p + j] = sum;
+    }
+  }
   /// END SOLUTION
 }
 
@@ -352,12 +363,44 @@ inline void AlignedDot(const float* __restrict__ a,
    *   out: compact 2D array of size TILE x TILE to write to
    */
 
-  a = (const float*)__builtin_assume_aligned(a, TILE * ELEM_SIZE);
-  b = (const float*)__builtin_assume_aligned(b, TILE * ELEM_SIZE);
-  out = (float*)__builtin_assume_aligned(out, TILE * ELEM_SIZE);
+  // a = (const float*)__builtin_assume_aligned(a, TILE * ELEM_SIZE);
+  // b = (const float*)__builtin_assume_aligned(b, TILE * ELEM_SIZE);
+  // out = (float*)__builtin_assume_aligned(out, TILE * ELEM_SIZE);
 
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  // assert(false && "Not Implemented");
+
+  // a is a TILE * TILE matrix, cout a
+//   std::cout << "TILE a:" << std::endl;
+//   for (int i = 0; i < TILE; ++i) {
+//     for (int j = 0; j < TILE; ++j) {
+//       std::cout << a[i * TILE + j] << " ";
+//     }
+//     std::cout << std::endl;
+//   }
+// 
+//   std::cout << "TILE b:" << std::endl;
+//   for (int i = 0; i < TILE; ++i) {
+//     for (int j = 0; j < TILE; ++j) {
+//       std::cout << b[i * TILE + j] << " ";
+//     }
+//     std::cout << std::endl;
+//   }
+
+  for (int i = 0; i < TILE; ++i) {
+    for (int j = 0; j < TILE; ++j) {
+      scalar_t sum = 0.0f;
+      for (int k = 0; k < TILE; ++k) {
+        sum += a[i * TILE + k] * b[k * TILE + j];
+        // std::cout << "sum:" << sum << std::endl;
+      }
+      out[i * TILE + j] += sum;
+      // print the address of out[i * TILE + j]
+      // std::cout << "out[" << i << "][" << j << "] = " << &out[i * TILE + j] << std::endl;
+      // std::cout << "out[" << i << "][" << j << "] = " << out[i * TILE + j] << &out[i * TILE + j] << std::endl;
+    }
+  }
+  
   /// END SOLUTION
 }
 
@@ -383,7 +426,43 @@ void MatmulTiled(const AlignedArray& a, const AlignedArray& b, AlignedArray* out
    *
    */
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  // assert(false && "Not Implemented");
+  
+  memset(out->ptr, 0, out->size * ELEM_SIZE);
+
+//   std::cout<< std::endl;
+//   printf("size: %ld\n", out->size);
+// 
+//   // a is m * n matrix, print a
+//   std::cout << "a:" << std::endl;
+//   for (int i = 0; i < m; i++) {
+//     for (int j = 0; j < n; j++) {
+//       std::cout << a.ptr[i * n + j] << " ";
+//     }
+//     std::cout << std::endl;
+//   }
+// 
+//   // print b
+//   std::cout << "b:" << std::endl;
+//   for (int i = 0; i < n; i++) {
+//     for (int j = 0; j < p; j++) {
+//       std::cout << b.ptr[i * p + j] << " ";
+//     }
+//     std::cout << std::endl;
+//   }
+
+  for (int i = 0; i < m / TILE; ++i) {
+    for (int j = 0; j < p / TILE; ++j) {
+
+      for (int k = 0; k < n / TILE; ++k) {
+        // a bug is (n / TILE) is wirted as n, (p / TILE) is writed as p, waste a lot of time!
+        AlignedDot(a.ptr + i * (n / TILE) * TILE * TILE + k * TILE * TILE,
+                   b.ptr + k * (p / TILE) * TILE * TILE + j * TILE * TILE,
+                   out->ptr + i * (p / TILE) * TILE * TILE + j * TILE * TILE);
+      }
+
+    }
+  }
   /// END SOLUTION
 }
 
@@ -398,7 +477,13 @@ void ReduceMax(const AlignedArray& a, AlignedArray* out, size_t reduce_size) {
    */
 
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  // assert(false && "Not Implemented");
+  for (size_t i = 0; i < a.size; i += reduce_size) {
+    out->ptr[i / reduce_size] = a.ptr[i];
+    for (size_t j = 1; j < reduce_size; j++) {
+      out->ptr[i / reduce_size] = fmax(out->ptr[i / reduce_size], a.ptr[i + j]);
+    }
+  }
   /// END SOLUTION
 }
 
@@ -413,7 +498,13 @@ void ReduceSum(const AlignedArray& a, AlignedArray* out, size_t reduce_size) {
    */
 
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  // assert(false && "Not Implemented");
+  for (size_t i = 0; i < a.size; i += reduce_size) {
+    out->ptr[i / reduce_size] = a.ptr[i];
+    for (size_t j = 1; j < reduce_size; j++) {
+      out->ptr[i / reduce_size] += a.ptr[i + j];
+    }
+  }
   /// END SOLUTION
 }
 
@@ -472,9 +563,9 @@ PYBIND11_MODULE(ndarray_backend_cpu, m) {
   m.def("ewise_exp", EwiseExp);
   m.def("ewise_tanh", EwiseTanh);
 
-  // m.def("matmul", Matmul);
-  // m.def("matmul_tiled", MatmulTiled);
+  m.def("matmul", Matmul);
+  m.def("matmul_tiled", MatmulTiled);
 
-  // m.def("reduce_max", ReduceMax);
-  // m.def("reduce_sum", ReduceSum);
+  m.def("reduce_max", ReduceMax);
+  m.def("reduce_sum", ReduceSum);
 }
