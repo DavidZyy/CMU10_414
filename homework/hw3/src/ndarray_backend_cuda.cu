@@ -1,4 +1,6 @@
+#include <cstdio>
 #include <cuda_runtime.h>
+#include <ostream>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -98,7 +100,64 @@ __global__ void CompactKernel(const scalar_t* a, scalar_t* out, size_t size, Cud
   size_t gid = blockIdx.x * blockDim.x + threadIdx.x;
 
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  // assert(false && "Not Implemented");
+
+  // cout shape and strides
+//   if (gid == 3) {
+// 
+//   printf("shape: \n");
+//   for (int i = 0; i < shape.size; i++) {
+//     printf("%d ", shape.data[i]);
+//   }
+// 
+//   printf("\nstrides: \n");
+//   for (int i = 0; i < strides.size; i++) {
+//     printf("%d ", strides.data[i]);
+//   }
+//   printf("\n");
+//   }
+
+  // map a gid to idx, one gid correspondign to an idx
+  if (gid < size) {
+    size_t cnt = gid;
+
+    size_t dim = shape.size;
+
+    // make sure shape and strides is from dimension small to big
+    CudaVec reverse_shape;
+    for (int i = 0; i < dim; i++) {
+      reverse_shape.data[dim - i - 1] = shape.data[i];
+      // reverse_shape.data[i] = shape.data[i];
+    }
+    CudaVec reverse_strides;
+    for (int i = 0; i < dim; i++) {
+      reverse_strides.data[dim - i - 1] = strides.data[i];
+      // reverse_strides.data[i] = strides.data[i];
+    }
+
+    // use shape to calculate contiguous stride
+    CudaVec contiguous_stride;
+    contiguous_stride.data[0] = 1;
+
+    for (int i = 1; i < dim; i++) {
+      contiguous_stride.data[i] = contiguous_stride.data[i - 1] * reverse_shape.data[i - 1];
+    }
+
+    // from big dimension to small dimension, calculate idx of each dimension
+    CudaVec idxVec;
+    for (int i = dim-1; i >= 0; i--) {
+      idxVec.data[i] = cnt / contiguous_stride.data[i];
+      cnt = cnt % contiguous_stride.data[i];
+    }
+
+    size_t totolIdx = 0;
+    for (int i = 0; i < dim; i++) {
+      totolIdx += idxVec.data[i] * reverse_strides.data[i];
+    }
+
+    out[gid] = a[totolIdx + offset];
+  }
+
   /// END SOLUTION
 }
 
@@ -120,12 +179,63 @@ void Compact(const CudaArray& a, CudaArray* out, std::vector<int32_t> shape,
    */
 
   // Nothing needs to be added here
+  // std::cout << std::endl;
+  // std::cout << "Compact not implemented yet" << std::endl;
+
   CudaDims dim = CudaOneDim(out->size);
   CompactKernel<<<dim.grid, dim.block>>>(a.ptr, out->ptr, out->size, VecToCuda(shape),
                                          VecToCuda(strides), offset);
 }
 
+__global__ void EwiseSetitemKernel (const scalar_t* a, scalar_t* out, size_t size, CudaVec shape,
+                              CudaVec strides, size_t offset) {
 
+  size_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+
+  // map a gid to idx, one gid correspondign to an idx
+  if (gid < size) {
+    size_t cnt = gid;
+
+    size_t dim = shape.size;
+
+    // make sure shape and strides is from dimension small to big
+    CudaVec reverse_shape;
+    for (int i = 0; i < dim; i++) {
+      reverse_shape.data[dim - i - 1] = shape.data[i];
+      // reverse_shape.data[i] = shape.data[i];
+    }
+    CudaVec reverse_strides;
+    for (int i = 0; i < dim; i++) {
+      reverse_strides.data[dim - i - 1] = strides.data[i];
+      // reverse_strides.data[i] = strides.data[i];
+    }
+
+    // use shape to calculate contiguous stride
+    CudaVec contiguous_stride;
+    contiguous_stride.data[0] = 1;
+
+    for (int i = 1; i < dim; i++) {
+      contiguous_stride.data[i] = contiguous_stride.data[i - 1] * reverse_shape.data[i - 1];
+    }
+
+    // from big dimension to small dimension, calculate idx of each dimension
+    CudaVec idxVec;
+    for (int i = dim-1; i >= 0; i--) {
+      idxVec.data[i] = cnt / contiguous_stride.data[i];
+      cnt = cnt % contiguous_stride.data[i];
+    }
+
+    size_t totolIdx = 0;
+    for (int i = 0; i < dim; i++) {
+      totolIdx += idxVec.data[i] * reverse_strides.data[i];
+    }
+
+    // out[gid] = a[totolIdx + offset];
+    out[totolIdx + offset] = a[gid];
+  }
+
+  /// END SOLUTION
+}
 
 void EwiseSetitem(const CudaArray& a, CudaArray* out, std::vector<int32_t> shape,
                   std::vector<int32_t> strides, size_t offset) {
@@ -141,11 +251,72 @@ void EwiseSetitem(const CudaArray& a, CudaArray* out, std::vector<int32_t> shape
    *   offset: offset of the *out* array (not a, which has zero offset, being compact)
    */
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  // CudaDims dim = CudaOneDim(out->size);
+  // std::cout << "out->size is: " << out->size << std::endl;
+  size_t size = 1;
+  for (auto dim : shape) {
+    size *= dim;
+  }
+  // std::cout << "size is: " << size << std::endl;
+  CudaDims dim = CudaOneDim(size);
+  // should not be out size here!!!!
+  // EwiseSetitemKernel<<<dim.grid, dim.block>>>(a.ptr, out->ptr, out->size, VecToCuda(shape),
+  //                                        VecToCuda(strides), offset);
+  EwiseSetitemKernel<<<dim.grid, dim.block>>>(a.ptr, out->ptr, size, VecToCuda(shape),
+                                         VecToCuda(strides), offset);
   /// END SOLUTION
 }
 
 
+__global__ void ScalarSetitemKernel (size_t size, scalar_t val, scalar_t* out, CudaVec shape,
+                              CudaVec strides, size_t offset) {
+
+  size_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+
+  // map a gid to idx, one gid correspondign to an idx
+  if (gid < size) {
+    size_t cnt = gid;
+
+    size_t dim = shape.size;
+
+    // make sure shape and strides is from dimension small to big
+    CudaVec reverse_shape;
+    for (int i = 0; i < dim; i++) {
+      reverse_shape.data[dim - i - 1] = shape.data[i];
+      // reverse_shape.data[i] = shape.data[i];
+    }
+    CudaVec reverse_strides;
+    for (int i = 0; i < dim; i++) {
+      reverse_strides.data[dim - i - 1] = strides.data[i];
+      // reverse_strides.data[i] = strides.data[i];
+    }
+
+    // use shape to calculate contiguous stride
+    CudaVec contiguous_stride;
+    contiguous_stride.data[0] = 1;
+
+    for (int i = 1; i < dim; i++) {
+      contiguous_stride.data[i] = contiguous_stride.data[i - 1] * reverse_shape.data[i - 1];
+    }
+
+    // from big dimension to small dimension, calculate idx of each dimension
+    CudaVec idxVec;
+    for (int i = dim-1; i >= 0; i--) {
+      idxVec.data[i] = cnt / contiguous_stride.data[i];
+      cnt = cnt % contiguous_stride.data[i];
+    }
+
+    size_t totolIdx = 0;
+    for (int i = 0; i < dim; i++) {
+      totolIdx += idxVec.data[i] * reverse_strides.data[i];
+    }
+
+    // out[gid] = a[totolIdx + offset];
+    out[totolIdx + offset] = val;
+  }
+
+  /// END SOLUTION
+}
 
 void ScalarSetitem(size_t size, scalar_t val, CudaArray* out, std::vector<int32_t> shape,
                    std::vector<int32_t> strides, size_t offset) {
@@ -163,7 +334,10 @@ void ScalarSetitem(size_t size, scalar_t val, CudaArray* out, std::vector<int32_
    *   offset: offset of the out array
    */
   /// BEGIN SOLUTION
-  assert(false && "Not Implemented");
+  // assert(false && "Not Implemented");
+  CudaDims dim = CudaOneDim(size);
+  ScalarSetitemKernel<<<dim.grid, dim.block>>>(size, val, out->ptr, VecToCuda(shape),
+                                              VecToCuda(strides), offset);
   /// END SOLUTION
 }
 

@@ -81,13 +81,13 @@ void Compact(const AlignedArray& a, AlignedArray* out, std::vector<int32_t> shap
 
   int32_t cnt = 0;
   for (int i=0; i < num; i++) {
-    int32_t idx = 0;
+    int32_t totalIdx = 0;
     for (int j=0; j < idxVec.size(); j++) {
-      idx += idxVec[j] * strides[j];
+      totalIdx += idxVec[j] * strides[j];
     }
-    idx += offset;
+    totalIdx += offset;
 
-    out->ptr[cnt++] = a.ptr[idx];
+    out->ptr[cnt++] = a.ptr[totalIdx];
 
     // carry
     for (int j=idxVec.size()-1; j >= 0; j--) {

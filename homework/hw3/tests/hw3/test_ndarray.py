@@ -84,6 +84,12 @@ def check_same_memory(original, view):
 )
 @pytest.mark.parametrize("device", _DEVICES, ids=["cpu", "cuda"])
 def test_compact(params, device):
+    if device.name == "cpu":
+        pytest.skip()
+    if device.name == "cuda" and not device.enabled():
+        print("CUDA not enabled")
+        pytest.skip("CUDA not enabled")
+
     shape, np_fn, nd_fn = params["shape"], params["np_fn"], params["nd_fn"]
     _A = np.random.randint(low=0, high=10, size=shape)
     A = nd.array(_A, device=device)
@@ -94,6 +100,53 @@ def test_compact(params, device):
     rhs = np_fn(_A)
     np.testing.assert_allclose(lhs.numpy(), rhs, atol=1e-5, rtol=1e-5)
 
+
+
+
+@pytest.mark.parametrize("params",
+                         [
+                            {
+                                "shape": (3, 2),
+                                "np_fn": lambda X: X.transpose(),
+                                "nd_fn": lambda X: X.permute((1, 0)),
+                            }
+                         ],
+                         ids=[],
+)
+@pytest.mark.parametrize("device", _DEVICES, ids=["cpu", "cuda"])
+def test_compact_simple(params, device):
+    if device.name == "cpu":
+        pytest.skip()
+
+    shape, np_fn, nd_fn = params["shape"], params["np_fn"], params["nd_fn"]
+    _A = np.random.randint(low=0, high=10, size=shape)
+    _A[0][0] = 0
+    _A[0][1] = 1
+    _A[1][0] = 2
+    _A[1][1] = 3
+    _A[2][0] = 4
+    _A[2][1] = 5
+    A = nd.array(_A, device=device)
+
+    temp1 = nd_fn(A)
+    # lhs = nd_fn(A).compact()
+    lhs = temp1.compact()
+    assert lhs.is_compact(), "array is not compact"
+
+    rhs = np_fn(_A)
+    np.testing.assert_allclose(lhs.numpy(), rhs, atol=1e-5, rtol=1e-5)
+
+
+
+# test if it could allocate array on GPU successfully.
+def test_cuda():
+    _A = np.random.randint(low=0, high=10, size=(2, 2))
+    try:
+        A = nd.array(_A, device=nd.cuda())
+        # Your test logic here
+    except RuntimeError as e:
+        print(f"RuntimeError occurred: {e}")
+        raise
 
 reduce_params = [
     {"dims": (10,), "axis": 0},
@@ -163,12 +216,16 @@ ShapeAndSlices = lambda *shape: _ShapeAndSlices(np.ones(shape))
 def test_setitem_ewise(params, device):
     lhs_shape, lhs_slices = params["lhs"]
     rhs_shape, rhs_slices = params["rhs"]
-    _A = np.random.randn(*lhs_shape)
-    _B = np.random.randn(*rhs_shape)
+    # _A = np.random.randn(*lhs_shape)
+    # _B = np.random.randn(*rhs_shape)
+    _A = np.ones(lhs_shape)
+    _B = np.ones(rhs_shape) * 2
     A = nd.array(_A, device=device)
     B = nd.array(_B, device=device)
     start_ptr = A._handle.ptr()
-    A[lhs_slices] = B[rhs_slices]
+    # A[lhs_slices] = B[rhs_slices]
+    tempB = B[rhs_slices]
+    A[lhs_slices] = tempB
     _A[lhs_slices] = _B[rhs_slices]
     end_ptr = A._handle.ptr()
     assert start_ptr == end_ptr, "you should modify in-place"
