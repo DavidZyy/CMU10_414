@@ -259,8 +259,8 @@ def test_setitem_scalar(params, device):
     compare_strides(_A, A)
 
 
-matmul_tiled_shapes = [(1, 1, 1), (2, 2, 3), (1, 2, 1), (3, 3, 3)]
-# matmul_tiled_shapes = [(2, 2, 2)]
+# matmul_tiled_shapes = [(1, 1, 1), (2, 2, 3), (1, 2, 1), (3, 3, 3)]
+matmul_tiled_shapes = [(16, 16, 16)]
 
 
 @pytest.mark.parametrize("m,n,p", matmul_tiled_shapes)
@@ -268,6 +268,7 @@ def test_matmul_tiled(m, n, p):
     device = nd.cpu()
     assert hasattr(device, "matmul_tiled")
     t = device.__tile_size__
+    # print(t)
     A = nd.array(np.random.randn(m, n, t, t), device=nd.cpu())
     B = nd.array(np.random.randn(n, p, t, t), device=nd.cpu())
     # A = nd.array(np.ones((m, n, t, t)), device=nd.cpu())

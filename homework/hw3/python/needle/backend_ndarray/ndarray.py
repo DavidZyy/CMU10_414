@@ -390,6 +390,7 @@ class NDArray:
         """
 
         # handle singleton as tuple, everything as slices
+        # for X have shape (8, 16), X[3:4, 3:4]  idxs here is {tuple:2}: (slice(3, 4, None), slice(3, 4, None))
         if not isinstance(idxs, tuple):
             idxs = (idxs,)
         idxs = tuple(
@@ -398,6 +399,7 @@ class NDArray:
                 for i, s in enumerate(idxs)
             ]
         )
+        # idxs here is (slice(3, 4, 1), slice(3, 4, 1))
         assert len(idxs) == self.ndim, "Need indexes equal to number of dimensions"
 
         ### BEGIN YOUR SOLUTION
