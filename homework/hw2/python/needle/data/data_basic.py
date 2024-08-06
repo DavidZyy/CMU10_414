@@ -53,6 +53,8 @@ class DataLoader:
         self.dataset = dataset
         self.shuffle = shuffle
         self.batch_size = batch_size
+        # for example a = np.array_split(np.arange(50000), range(100, 50000, 100))
+        # will generate list:500, each have 100 elements.
         if not self.shuffle:
             self.ordering = np.array_split(np.arange(len(dataset)),
                                            range(batch_size, len(dataset), batch_size))
