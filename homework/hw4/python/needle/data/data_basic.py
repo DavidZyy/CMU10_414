@@ -60,12 +60,32 @@ class DataLoader:
 
     def __iter__(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # raise NotImplementedError()
+        self.current_batch_index = -1
+        # for example a = np.array_split(np.arange(50000), range(100, 50000, 100))
+        # will generate a list of ndarrays, each of which have 100 elements.
+        if self.shuffle:
+            self.ordering = np.random.permutation(len(self.dataset))
+            self.ordering = np.array_split(self.ordering, 
+                                           range(self.batch_size, len(self.dataset), self.batch_size))
         ### END YOUR SOLUTION
         return self
 
     def __next__(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.current_batch_index += 1
+        if self.current_batch_index >= len(self.ordering):
+            raise StopIteration
+        
+        batch_indices = self.ordering[self.current_batch_index]
+        batch = [self.dataset[idx] for idx in batch_indices]  # batch is a list of tuple, (img, label)
+
+        # batch[i][0] is the img
+        # batch[i][1] is the label
+        img_batch = [batch[i][0] for i in range(len(batch))]
+        label_batch = [batch[i][1] for i in range(len(batch))]
+        img = Tensor(np.stack(img_batch, axis=0))  # axis=0 means the number of samples
+        label = Tensor(np.stack(label_batch, axis=0))
+        return (img, label)
         ### END YOUR SOLUTION
 

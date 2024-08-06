@@ -16,10 +16,11 @@ _DEVICES = [ndl.cpu(), pytest.param(ndl.cuda(),
     marks=pytest.mark.skipif(not ndl.cuda().enabled(), reason="No GPU"))]
 
 
+base_folder = "/home/zhuyangyang/Course/CMU10_414/homework/hw4/data/cifar-10-batches-py"
 TRAIN = [True, False]
 @pytest.mark.parametrize("train", TRAIN)
 def test_cifar10_dataset(train):
-    dataset = ndl.data.CIFAR10Dataset("data/cifar-10-batches-py", train=train)
+    dataset = ndl.data.CIFAR10Dataset(base_folder, train=train)
     if train:
         assert len(dataset) == 50000
     else:
@@ -36,7 +37,7 @@ BATCH_SIZES = [1, 15]
 @pytest.mark.parametrize("train", TRAIN)
 @pytest.mark.parametrize("device", _DEVICES, ids=["cpu", "cuda"])
 def test_cifar10_loader(batch_size, train, device):
-    cifar10_train_dataset = ndl.data.CIFAR10Dataset("data/cifar-10-batches-py", train=True)
+    cifar10_train_dataset = ndl.data.CIFAR10Dataset(base_folder, train=True)
     train_loader = ndl.data.DataLoader(cifar10_train_dataset, batch_size)
     for (X, y) in train_loader:
         break
