@@ -425,6 +425,8 @@ class NDArray:
     def __setitem__(self, idxs, other):
         """Set the values of a view into an array, using the same semantics
         as __getitem__()."""
+
+        # this make it could set part of the whole ndarray
         view = self.__getitem__(idxs)
         if isinstance(other, NDArray):
             assert prod(view.shape) == prod(other.shape)
@@ -629,7 +631,17 @@ class NDArray:
         Note: compact() before returning.
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # raise NotImplementedError()
+        offset = self._offset  # offset may not 0 if self is get from getitem
+        strides = list(self.strides)
+
+        for i in axes:
+            offset += (self.shape[i] - 1) * self.strides[i]
+            strides[i] = -strides[i]
+
+        out = NDArray.make(list(self.shape), strides=strides, device=self.device, handle=self._handle, offset=offset)
+        out = out.compact()
+        return out
         ### END YOUR SOLUTION
 
     def pad(self, axes):
@@ -637,9 +649,28 @@ class NDArray:
         Pad this ndarray by zeros by the specified amount in `axes`,
         which lists for _all_ axes the left and right padding amount, e.g.,
         axes = ( (0, 0), (1, 1), (0, 0)) pads the middle axis with a 0 on the left and right side.
+
+        zyy: return a new array, and the old array is unchanged(i.e., allocate new memory
+        for the new array)
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        new_shape = tuple(
+            [
+                s + axes[i][0] + axes[i][1]
+                for i, s in enumerate(self.shape)
+            ]
+        )
+
+        result = self.device.empty(new_shape, dtype=self.dtype)
+        result.fill(0)
+
+        idx = []
+        for i in range(len(self.shape)):
+            idx.append(slice(axes[i][0], axes[i][0] + self.shape[i], 1))
+
+        result[tuple(idx)] = self
+        return result
+        # raise NotImplementedError()
         ### END YOUR SOLUTION
 
 def array(a, dtype="float32", device=None):

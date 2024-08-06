@@ -469,14 +469,18 @@ class Flip(TensorOp):
     def __init__(self, axes: Optional[tuple] = None):
         self.axes = axes
 
+    # return a ndarray
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return array_api.flip(a, self.axes)
         ### END YOUR SOLUTION
 
+    # return a Tensor
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # raise NotImplementedError()
+        result = flip(out_grad, self.axes)
+        return result
         ### END YOUR SOLUTION
 
 
@@ -491,12 +495,26 @@ class Dilate(TensorOp):
 
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        shape = []
+        index = []
+        for i in range(len(a.shape)):
+            if i in self.axes:
+                shape.append(a.shape[i] * (1 + self.dilation))
+                index.append(slice(0, a.shape[i] * (1 + self.dilation), (1 + self.dilation)))
+            else:
+                shape.append(a.shape[i])
+                index.append(slice(0, a.shape[i], 1))
+
+        result = array_api.empty(shape=shape, device=a.device)
+        result.fill(0)
+        result[tuple(index)] = a
+        return result
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # raise NotImplementedError()
+        return undilate(out_grad, self.axes, self.dilation)
         ### END YOUR SOLUTION
 
 
@@ -511,12 +529,27 @@ class UnDilate(TensorOp):
 
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # raise NotImplementedError()
+        shape = []
+        index = []
+        for i in range(len(a.shape)):
+            if i in self.axes:
+                shape.append(a.shape[i] // (1 + self.dilation))
+                index.append(slice(0, a.shape[i], (1 + self.dilation)))
+            else:
+                shape.append(a.shape[i])
+                index.append(slice(0, a.shape[i], 1))
+        
+        result = array_api.empty(shape=shape, device=a.device)
+        result.fill(0)
+        result = a[tuple(index)]
+        return result
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # raise NotImplementedError()
+        return dilate(out_grad, self.axes, self.dilation)
         ### END YOUR SOLUTION
 
 
