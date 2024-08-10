@@ -623,21 +623,62 @@ class Conv(TensorOp):
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-#         A = node.inputs[0]
-#         B = node.inputs[1]
-# 
-#         pad_A = A.pad(((0, 0), (self.padding, self.padding), (self.padding, self.padding), (0, 0)))
-#         N, H, W, C_in = pad_A.shape
-#         K, _, _, C_out = B.shape
-#         Ns, Hs, Ws, Cs = pad_A.strides
-# 
-#         inner_dim = K * K * C_in
-#         new_H = (H - K) // self.stride + 1
-#         new_W = (W - K) // self.stride + 1
-# 
-#         temp1 = out_grad.reshape((N*new_H*new_W, C_out))
-#         temp2 = 1
+        # raise NotImplementedError()
+
+        A = node.inputs[0].cached_data
+        B = node.inputs[1].cached_data
+
+        pad_A = A.pad(((0, 0), (self.padding, self.padding), (self.padding, self.padding), (0, 0)))
+        N, H, W, C_in = pad_A.shape
+        K, _, _, C_out = B.shape
+
+        N, new_H, new_W, C_out = out_grad.shape
+
+        out_grad_compact = out_grad.cached_data.compact()
+        '''
+        grad of A(X, input[0])
+        '''
+        reshape_out_grad_0 = out_grad_compact.reshape((N, new_H*new_W*C_out))
+
+        assert (new_H == (H - K) // self.stride + 1)
+        assert (new_W == (W - K) // self.stride + 1)
+
+        B_list = []
+        for i in range(new_H):
+            for j in range(new_W):
+                pad_B = B.pad(((i*self.stride, H-i*self.stride-K), (j*self.stride, W-j*self.stride-K), (0, 0), (0, 0)))
+                reshape_pad_B = pad_B.reshape((H*W*C_in, C_out))
+                B_list.append(reshape_pad_B)
+
+        stackOp = Stack(axis=1)
+        stack_reshape_pad_B = stackOp.compute(B_list)
+
+        reshape_stack_reshape_pad_B = stack_reshape_pad_B.reshape((H*W*C_in, new_H*new_W*C_out))
+        transpose_reshape_stack_reshape_pad_B = reshape_stack_reshape_pad_B.permute((1, 0))
+        temp0 = reshape_out_grad_0 @ transpose_reshape_stack_reshape_pad_B
+        temp1 = temp0.reshape((N, H, W, C_in))
+        grad_A = temp1[:, self.padding:H-self.padding, self.padding:W-self.padding, :]
+
+        '''
+        grad of B(W, input[1])
+        '''
+        reshape_out_grad_1 = out_grad_compact.reshape((N*new_H*new_W, C_out))
+
+        Ns, Hs, Ws, Cs = pad_A.strides
+        inner_dim = K * K * C_in
+        new_shape = (N, new_H, new_W, K, K, C_in)
+        new_strides = (Ns, Hs * self.stride, Ws * self.stride, Hs, Ws, Cs)
+        temp1 = NDArray.make(shape=new_shape, strides=new_strides, device=A.device, handle=pad_A._handle)
+        temp2 = temp1.compact()  # use more memory
+        temp3 = temp2.reshape((N*(new_H)*(new_W), inner_dim))  # not support (-1, inner_dim)
+
+        temp4 = temp3.permute((1, 0))
+        temp5 = temp4 @ reshape_out_grad_1
+        grad_B = temp5.reshape((K, K, C_in, C_out))
+
+        tA = Tensor(grad_A, device=node.inputs[0].device, dtype=node.inputs[0].dtype)
+        tB = Tensor(grad_B, device=node.inputs[1].device, dtype=node.inputs[1].dtype)
+        return tA, tB
 
         ### END YOUR SOLUTION
 
