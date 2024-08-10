@@ -203,6 +203,10 @@ class Tensor(Value):
         requires_grad=True,
         **kwargs
     ):
+        '''
+        Use Tensor or numpy array to initialize a tensor??
+        not use a NDArray as the input of parameter array
+        '''
         if isinstance(array, Tensor):
             if device is None:
                 device = array.device

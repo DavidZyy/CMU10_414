@@ -93,7 +93,8 @@ class Linear(Module):
         # bias should be one dimension
         if bias:
             # no need to pass in 1 for fan_out, or I need a transpose
-            self.bias = Parameter(init.kaiming_uniform(1,  out_features, device=device, dtype=dtype, requires_grad=True))
+            # self.bias = Parameter(init.kaiming_uniform(1,  out_features, device=device, dtype=dtype, requires_grad=True))
+            self.bias = Parameter(init.kaiming_uniform(0,  out_features, device=device, dtype=dtype, requires_grad=True))
         else:
             self.bias = None
         ### END YOUR SOLUTION

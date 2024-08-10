@@ -207,7 +207,13 @@ class BroadcastTo(TensorOp):
         for i in range(len1):
             if shape1[i] != shape2_prepend[i]:
                 axis.append(i)
-        temp1 = summation(out_grad, axes=tuple(axis))
+
+        # for the case that the shape1 == shape2, we can just use out_grad directly: broadcast (2, 2) to (2, 2)
+        if axis == []:
+            a = out_grad.cached_data.compact()
+            temp1 = Tensor(a, device=node.inputs[0].device, dtype=node.inputs[0].dtype)
+        else:
+            temp1 = summation(out_grad, axes=tuple(axis))
         temp2 = reshape(temp1, node.inputs[0].shape)
         return temp2
         # return reshape(summation(out_grad, axes=tuple(axis)), node.inputs[0].shape)
