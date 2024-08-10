@@ -655,9 +655,9 @@ class Conv(TensorOp):
 
         reshape_stack_reshape_pad_B = stack_reshape_pad_B.reshape((H*W*C_in, new_H*new_W*C_out))
         transpose_reshape_stack_reshape_pad_B = reshape_stack_reshape_pad_B.permute((1, 0))
-        temp0 = reshape_out_grad_0 @ transpose_reshape_stack_reshape_pad_B
-        temp1 = temp0.reshape((N, H, W, C_in))
-        grad_A = temp1[:, self.padding:H-self.padding, self.padding:W-self.padding, :]
+        mul = reshape_out_grad_0 @ transpose_reshape_stack_reshape_pad_B
+        re_mul = mul.reshape((N, H, W, C_in))
+        grad_A = re_mul[:, self.padding:H-self.padding, self.padding:W-self.padding, :]
 
         '''
         grad of B(W, input[1])

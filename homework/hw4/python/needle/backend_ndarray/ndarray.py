@@ -404,7 +404,8 @@ class NDArray:
         ### BEGIN YOUR SOLUTION
         new_shape = []
         new_strides = []
-        new_offset = 0
+        # new_offset = 0
+        new_offset = self._offset  # the current ndarray maybe sliced from another ndarray, so offset may not 0.
 
         for i, s in enumerate(idxs):
             start, stop, step = s.start, s.stop, s.step

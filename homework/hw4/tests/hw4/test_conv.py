@@ -420,9 +420,9 @@ op_conv_shapes = [
 ]
 @pytest.mark.parametrize("Z_shape, W_shape, stride, padding", op_conv_shapes)
 @pytest.mark.parametrize("device", _DEVICES)
-# @pytest.mark.parametrize("backward", [True, False], ids=["backward", "forward"])
 # @pytest.mark.parametrize("backward", [False], ids=["forward"])
-@pytest.mark.parametrize("backward", [True], ids=["backward"])
+# @pytest.mark.parametrize("backward", [True], ids=["backward"])
+@pytest.mark.parametrize("backward", [True, False], ids=["backward", "forward"])
 def test_op_conv(Z_shape, W_shape, stride, padding, backward, device):
     np.random.seed(0)
     import torch
