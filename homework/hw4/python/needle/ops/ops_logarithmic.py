@@ -57,9 +57,11 @@ class LogSumExp(TensorOp):
         ### BEGIN YOUR SOLUTION
         Z = node.inputs[0].cached_data
         max_Z = array_api.max(Z, axis=self.axes, keepdims=True)
+        max_Z = max_Z.broadcast_to(Z.shape)  # NDArray do not support implicit broadcast, must broadcast explicit
         shifted_Z = Z - max_Z
         exp_shifted_Z = array_api.exp(shifted_Z)
         sum_exp_shifted_Z = array_api.sum(exp_shifted_Z, axis=self.axes, keepdims=True)
+        sum_exp_shifted_Z = sum_exp_shifted_Z.broadcast_to(exp_shifted_Z.shape)
         softmax_Z = exp_shifted_Z / sum_exp_shifted_Z
 
         # first reshape, make sure have same dimensions
@@ -77,7 +79,8 @@ class LogSumExp(TensorOp):
         # then broadcast, make sure the number on each dimension equal
         out_grad = out_grad.broadcast_to(softmax_Z.shape)
 
-        return out_grad * Tensor(softmax_Z)
+        # if not set device of Tensor, it will set to default_device, i.e. cpu_numpy().
+        return out_grad * Tensor(softmax_Z, device=node.inputs[0].device, dtype=node.inputs[0].dtype)
         ### END YOUR SOLUTION
 
 

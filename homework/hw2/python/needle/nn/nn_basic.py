@@ -130,7 +130,6 @@ class Flatten(Module):
         new_shape = (old_shape[0], np.prod(old_shape[1:]))
         result = ops.reshape(X, new_shape)
         return result
-        # raise NotImplementedError()
         ### END YOUR SOLUTION
 
 

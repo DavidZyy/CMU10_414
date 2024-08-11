@@ -7,16 +7,36 @@ import numpy as np
 np.random.seed(0)
 
 
+def ResidualBlock(in_channels, out_channels, kernel_size, stride, device=None, dtype="float32"):
+    main_path = nn.Sequential(nn.ConvBN(in_channels, out_channels, kernel_size, stride, device=device, dtype=dtype),
+                              nn.ConvBN(in_channels, out_channels, kernel_size, stride, device=device, dtype=dtype))
+
+    return nn.Residual(main_path)
+
 class ResNet9(ndl.nn.Module):
     def __init__(self, device=None, dtype="float32"):
         super().__init__()
         ### BEGIN YOUR SOLUTION ###
-        raise NotImplementedError() ###
+        # raise NotImplementedError() ###
+        self.model = nn.Sequential(nn.ConvBN(3, 16, 7, 4, device=device, dtype=dtype),
+                                   nn.ConvBN(16, 32, 3, 2, device=device, dtype=dtype),
+                                   ResidualBlock(32, 32, 3, 1, device=device, dtype=dtype),
+
+                                   nn.ConvBN(32, 64, 3, 2, device=device, dtype=dtype),
+                                   nn.ConvBN(64, 128, 3, 2, device=device, dtype=dtype),
+                                   ResidualBlock(128, 128,3, 1, device=device, dtype=dtype),
+
+                                   nn.Flatten(),
+
+                                   nn.Linear(128, 128, device=device, dtype=dtype),
+                                   nn.ReLU(),
+                                   nn.Linear(128, 10, device=device, dtype=dtype))
         ### END YOUR SOLUTION
 
     def forward(self, x):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # raise NotImplementedError()
+        return self.model(x)
         ### END YOUR SOLUTION
 
 

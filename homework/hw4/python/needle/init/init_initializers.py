@@ -18,7 +18,7 @@ def xavier_normal(fan_in, fan_out, gain=1.0, **kwargs):
 def kaiming_uniform(fan_in, fan_out, shape=None, nonlinearity="relu", **kwargs):
     assert nonlinearity == "relu", "Only relu supported currently"
     ### BEGIN YOUR SOLUTION
-    divisor = fan_out if (fan_in == 0) else fan_in
+    divisor = fan_out if (fan_in == 1) else fan_in
     gain = math.sqrt(2)
     bound = gain * math.sqrt(3 / divisor)
     result_shape = (fan_in, fan_out) if (shape is None) else shape

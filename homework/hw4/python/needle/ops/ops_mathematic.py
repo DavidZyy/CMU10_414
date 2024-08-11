@@ -181,7 +181,10 @@ class Reshape(TensorOp):
         return array_api.reshape(a, self.shape)
 
     def gradient(self, out_grad, node: Tensor):
-        return reshape(out_grad, node.inputs[0].shape)
+        a = out_grad.cached_data.compact()
+        a = a.reshape(node.inputs[0].shape)  # the below, reshape method is the tensor's method, a.reshape method is the NDArray's method
+        result = Tensor(a, device=node.inputs[0].device, dtype=node.inputs[0].dtype)
+        return result
 
 
 def reshape(a, shape):
@@ -330,7 +333,7 @@ class ReLU(TensorOp):
         return array_api.maximum(a, 0)
 
     def gradient(self, out_grad, node):
-        return Tensor(node.inputs[0].numpy() > 0, dtype='float32') * out_grad
+        return Tensor(node.inputs[0].numpy() > 0, device=node.inputs[0].device, dtype=node.inputs[0].dtype) * out_grad
 
 
 def relu(a):
@@ -570,9 +573,11 @@ class Conv(TensorOp):
 
     def compute(self, A, B):
         ### BEGIN YOUR SOLUTION
-        '''
+        """
         method 1: expand(tile) A (X)
-        '''
+        how the case that W not conv all the X are handled? seems the following method
+        could handle this case correctly
+        """
         # pad A first
         # pad_A = A.pad(((0, 0), (self.padding, self.padding), (self.padding, self.padding), (0, 0)))
         #

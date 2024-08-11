@@ -601,13 +601,14 @@ class NDArray:
             out = NDArray.make((1,), device=self.device)
 
         else:
-            if isinstance(axis, (tuple, list)):
+            if isinstance(axis, (tuple, list)):  # if axis is a tuple or list, not means that axis is a tuple which consists of tuple and list
                 assert len(axis) == 1, "Only support reduction over a single axis"
                 axis = axis[0]
 
             view = self.permute(
                 tuple([a for a in range(self.ndim) if a != axis]) + (axis,)
             )
+            # if keepdims is set, the reduced dimension will be 1, otherwise the reduced dimension will be removed
             out = NDArray.make(
                 tuple([1 if i == axis else s for i, s in enumerate(self.shape)])
                 if keepdims else
@@ -714,10 +715,11 @@ def exp(a):
 def tanh(a):
     return a.tanh()
 
+def max(a, axis=None, keepdims=False):
+    return a.max(axis=axis, keepdims=keepdims)
 
 def sum(a, axis=None, keepdims=False):
     return a.sum(axis=axis, keepdims=keepdims)
-
 
 def flip(a, axes):
     return a.flip(axes)

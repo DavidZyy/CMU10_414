@@ -173,9 +173,19 @@ def test_init_kaiming_uniform(device):
 
 @pytest.mark.parametrize("device", _DEVICES)
 def test_resnet9(device):
-    def num_params(model):
-        return np.sum([np.prod(x.shape) for x in model.parameters()])
+    # def num_params(model):
+    #     return np.sum([np.prod(x.shape) for x in model.parameters()])
 
+    def num_params(model):
+        params = model.parameters()
+        params_num_list = [np.prod(x.shape) for x in params]
+        summation = np.sum(params_num_list)
+        return summation
+
+
+    # error, should append the directory of apps
+    # sys.path.append('/home/zhuyangyang/Course/CMU10_414/homework/hw4/apps')
+    sys.path.append('/home/zhuyangyang/Course/CMU10_414/homework/hw4')
     from apps.models import ResNet9
     np.random.seed(0)
     model = ResNet9(device=device)
@@ -454,10 +464,11 @@ def test_op_conv(Z_shape, W_shape, stride, padding, backward, device):
     assert err3 < 1e-1, "outputs match %s, %s" % (y2, out2)
 
 
+base_folder = "/home/zhuyangyang/Course/CMU10_414/homework/hw4/data/cifar-10-batches-py"
 @pytest.mark.parametrize("device", _DEVICES)
 def test_train_cifar10(device):
     np.random.seed(0)
-    dataset = ndl.data.CIFAR10Dataset("./data/cifar-10-batches-py", train=True)
+    dataset = ndl.data.CIFAR10Dataset(base_folder, train=True)
     dataloader = ndl.data.DataLoader(\
              dataset=dataset,
              batch_size=128,
@@ -467,6 +478,7 @@ def test_train_cifar10(device):
              # device=device,
              # dtype="float32"
              )
+    sys.path.append('/home/zhuyangyang/Course/CMU10_414/homework/hw4')
     from apps.models import ResNet9
     np.random.seed(0)
     model = ResNet9(device=device, dtype="float32")

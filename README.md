@@ -1,6 +1,6 @@
 dlsys course repository.
 
-1. Use pytest under homework/hw*
+1. Use pytest command line under homework/hw*
 2. In pycharm, right click directory, "make directory as Source root" has influence on pytest, if do hw2, should Unmark other hw*.
 3. Use vscode to write codes, and use pycharm to test or debug codes.
 4. if get error `ModuleNotFoundError: No module named 'needle'`, use command `export PYTHONPATH=$PYTHONPATH:/home/zhuyangyang/Course/CMU10_414/homework/hw?/python`, this will temporarily add the directory to the PYTHONPATH environment variable.

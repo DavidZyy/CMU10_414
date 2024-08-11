@@ -46,12 +46,12 @@ class Conv(Module):
         ### END YOUR SOLUTION
 
     def forward(self, x: Tensor) -> Tensor:
-        '''
+        """
         x is in NCHW format, should transpose it to NHWC format.
         how to calculate the padding (when stride = 1) ?
         (H + 2*pad) - k + 1 = H
         pad = (k - 1) / 2
-        '''
+        """
         ### BEGIN YOUR SOLUTION
         x = x.transpose((1, 2)).transpose((2, 3))
         out = ops.conv(x, self.weight, self.stride, padding=self.kernel_size//2)
@@ -64,3 +64,21 @@ class Conv(Module):
         return out
         # raise NotImplementedError()
         ### END YOUR SOLUTION
+
+
+from needle.nn import Sequential, BatchNorm2d, ReLU
+class ConvBN(Sequential):
+    """
+    Conv2d + BatchNorm2d + ReLU
+    """
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, device=None, dtype="float32"):
+        # call the super class's __init__ function (Sequential's __init__)
+        super().__init__(
+            Conv(in_channels, out_channels, kernel_size, stride, device=device, dtype=dtype),
+            BatchNorm2d(out_channels, device=device, dtype=dtype),
+            ReLU()
+        )
+    
+    # just use the forward function of Sequential, no need to implement it
+    def forward(self, x: Tensor) -> Tensor:
+        return super().forward(x)
