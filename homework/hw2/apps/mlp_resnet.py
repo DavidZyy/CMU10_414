@@ -63,8 +63,7 @@ def MLPResNet(
 
 def epoch(dataloader, model, opt=None):
     np.random.seed(4)
-    ### BEGIN YOUR SOLUTION
-    # raise NotImplementedError()
+    # tot_loss use list, calculate the loss of each batch,
     tot_loss, tot_error = [], 0.0
     loss_fn = nn.SoftmaxLoss()
     if opt is None:
@@ -86,8 +85,6 @@ def epoch(dataloader, model, opt=None):
             opt.step()
     sample_nums = len(dataloader.dataset)
     return tot_error/sample_nums, np.mean(tot_loss)
-
-    ### END YOUR SOLUTION
 
 
 def train_mnist(

@@ -1,12 +1,11 @@
 {
     "CodeGPT.apiKey": "OpenAI",
     "python.analysis.extraPaths": [
-        // "./homework/hw0/src",
-        // "./homework/hw1/python",
         "./homework/hw4/python",
         "venv/lib64/python3.11/site-packages",
         "./homework/hw4/python/needle/ops",
         "./homework/hw4/python/needle",
+        "./homework/hw4/apps"
     ],
     "files.associations": {
         "iostream": "cpp",

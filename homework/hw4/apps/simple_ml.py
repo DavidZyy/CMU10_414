@@ -10,7 +10,8 @@ sys.path.append("python/")
 import needle as ndl
 
 import needle.nn as nn
-from apps.models import *
+# from apps.models import *
+# from .models import *
 import time
 device = ndl.cpu()
 
@@ -110,12 +111,50 @@ def epoch_general_cifar10(dataloader, model, loss_fn=nn.SoftmaxLoss(), opt=None)
     """
     np.random.seed(4)
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    # raise NotImplementedError()
+    total_loss, total_correct = [], 0.0
+    if opt is None:
+        model.eval()
+        # for X, y in dataloader:
+        for i, data in enumerate(dataloader, 0):
+            X, y = data
+            # if i % 10 == 0:
+            print(i)
+            # X.to(model.device)
+            # y.to(model.device)
+            # assert X.device == model.device
+            logits = model.forward(X)
+            loss = loss_fn.forward(logits, y)
+            total_correct += np.sum(logits.numpy().argmax(axis=1) == y.numpy())
+            total_loss.append(loss.numpy())
+    else:
+        model.train()
+        # for X, y in dataloader:
+        for i, data in enumerate(dataloader, 0):
+            X, y = data
+            # if i % 10 == 0:
+            print(i)
+            # X.to(model.device)
+            # y.to(model.device)
+            # assert X.device == model.device
+            logits = model.forward(X)
+            # if loss_fn is nn.SoftmaxLoss, it will get error, loss_fn should be
+            # nn.SoftmaxLoss(), the "()" is indispensable.
+            loss = loss_fn(logits, y)
+            total_correct += np.sum(logits.numpy().argmax(axis=1) == y.numpy())
+            total_loss.append(loss.numpy())
+            # before is same as eval.
+            opt.reset_grad()
+            loss.backward()
+            opt.step()
+
+    sample_nums = len(dataloader.dataset)
+    return total_correct / sample_nums, np.mean(total_loss)
     ### END YOUR SOLUTION
 
 
 def train_cifar10(model, dataloader, n_epochs=1, optimizer=ndl.optim.Adam,
-          lr=0.001, weight_decay=0.001, loss_fn=nn.SoftmaxLoss):
+          lr=0.001, weight_decay=0.001, loss_fn=nn.SoftmaxLoss()):
     """
     Performs {n_epochs} epochs of training.
 
@@ -134,11 +173,15 @@ def train_cifar10(model, dataloader, n_epochs=1, optimizer=ndl.optim.Adam,
     """
     np.random.seed(4)
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    opt = optimizer(model.parameters(), lr=lr, weight_decay=weight_decay)
+    for i in range(n_epochs):
+        avg_acc, avg_loss = epoch_general_cifar10(dataloader, model, loss_fn=loss_fn, opt=opt)
+        print("train: Epoch %d: avg_acc %f, avg_loss %f" % (i, avg_acc, avg_loss))
+    return avg_acc, avg_loss
     ### END YOUR SOLUTION
 
 
-def evaluate_cifar10(model, dataloader, loss_fn=nn.SoftmaxLoss):
+def evaluate_cifar10(model, dataloader, loss_fn=nn.SoftmaxLoss()):
     """
     Computes the test accuracy and loss of the model.
 
@@ -153,7 +196,9 @@ def evaluate_cifar10(model, dataloader, loss_fn=nn.SoftmaxLoss):
     """
     np.random.seed(4)
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    avg_acc, avg_loss = epoch_general_cifar10(dataloader, model, loss_fn=loss_fn)
+    print("evaluate: avg_acc %f, avg_loss %f" % (avg_acc, avg_loss))
+    return avg_acc, avg_loss
     ### END YOUR SOLUTION
 
 

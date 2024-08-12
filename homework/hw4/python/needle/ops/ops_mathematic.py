@@ -579,56 +579,56 @@ class Conv(TensorOp):
         could handle this case correctly
         """
         # pad A first
-        # pad_A = A.pad(((0, 0), (self.padding, self.padding), (self.padding, self.padding), (0, 0)))
-        #
-        # N, H, W, C_in = pad_A.shape
-        # K, _, _, C_out = B.shape
-        # Ns, Hs, Ws, Cs = pad_A.strides
-        #
-        # inner_dim = K * K * C_in
-        # new_H = (H - K) // self.stride + 1
-        # new_W = (W - K) // self.stride + 1
-        #
-        # new_shape = (N, new_H, new_W, K, K, C_in)
-        # new_strides = (Ns, Hs * self.stride, Ws * self.stride, Hs, Ws, Cs)
-        # temp1 = NDArray.make(shape=new_shape, strides=new_strides, device=A.device, handle=pad_A._handle)
-        # temp2 = temp1.compact()  # use more memory
-        # temp3 = temp2.reshape((N*(new_H)*(new_W), inner_dim))  # not support (-1, inner_dim)
-        #
-        # temp4 = B.reshape((inner_dim, C_out))
-        # temp5 = temp3 @ temp4
-        # temp6 = temp5.reshape((N, new_H, new_W, C_out))
-        # return temp6
-
-        '''
-        method 2: expand(tile) B (X)
-        '''
         pad_A = A.pad(((0, 0), (self.padding, self.padding), (self.padding, self.padding), (0, 0)))
+
         N, H, W, C_in = pad_A.shape
         K, _, _, C_out = B.shape
+        Ns, Hs, Ws, Cs = pad_A.strides
 
+        inner_dim = K * K * C_in
         new_H = (H - K) // self.stride + 1
         new_W = (W - K) // self.stride + 1
 
-        reshape_pad_A = pad_A.reshape((N, H*W*C_in))
+        new_shape = (N, new_H, new_W, K, K, C_in)
+        new_strides = (Ns, Hs * self.stride, Ws * self.stride, Hs, Ws, Cs)
+        temp1 = NDArray.make(shape=new_shape, strides=new_strides, device=A.device, handle=pad_A._handle)
+        temp2 = temp1.compact()  # use more memory
+        temp3 = temp2.reshape((N*(new_H)*(new_W), inner_dim))  # not support (-1, inner_dim)
 
-        # make an empty tensor with nothing for stacking
-        B_list = []
-        for i in range(new_H):
-            for j in range(new_W):
-                pad_B = B.pad(((i*self.stride, H-i*self.stride-K), (j*self.stride, W-j*self.stride-K), (0, 0), (0, 0)))
-                reshape_pad_B = pad_B.reshape((H*W*C_in, C_out))
-                B_list.append(reshape_pad_B)
+        temp4 = B.reshape((inner_dim, C_out))
+        temp5 = temp3 @ temp4
+        temp6 = temp5.reshape((N, new_H, new_W, C_out))
+        return temp6
 
-        stackOp = Stack(axis=1)
-        # stack_reshape_pad_B = stackOp(B_list)
-        # stack_reshape_pad_B = Stack(2)(B_list)
-        stack_reshape_pad_B = stackOp.compute(B_list)
-
-        reshape_stack_reshape_pad_B = stack_reshape_pad_B.reshape((H*W*C_in, new_H*new_W*C_out))
-        temp0 = reshape_pad_A @ reshape_stack_reshape_pad_B
-        temp1 = temp0.reshape((N, new_H, new_W, C_out))
-        return temp1
+        # '''
+        # method 2: expand(tile) B (X)
+        # '''
+        # pad_A = A.pad(((0, 0), (self.padding, self.padding), (self.padding, self.padding), (0, 0)))
+        # N, H, W, C_in = pad_A.shape
+        # K, _, _, C_out = B.shape
+        #
+        # new_H = (H - K) // self.stride + 1
+        # new_W = (W - K) // self.stride + 1
+        #
+        # reshape_pad_A = pad_A.reshape((N, H*W*C_in))
+        #
+        # # make an empty tensor with nothing for stacking
+        # B_list = []
+        # for i in range(new_H):
+        #     for j in range(new_W):
+        #         pad_B = B.pad(((i*self.stride, H-i*self.stride-K), (j*self.stride, W-j*self.stride-K), (0, 0), (0, 0)))
+        #         reshape_pad_B = pad_B.reshape((H*W*C_in, C_out))
+        #         B_list.append(reshape_pad_B)
+        #
+        # stackOp = Stack(axis=1)
+        # # stack_reshape_pad_B = stackOp(B_list)
+        # # stack_reshape_pad_B = Stack(2)(B_list)
+        # stack_reshape_pad_B = stackOp.compute(B_list)
+        #
+        # reshape_stack_reshape_pad_B = stack_reshape_pad_B.reshape((H*W*C_in, new_H*new_W*C_out))
+        # temp0 = reshape_pad_A @ reshape_stack_reshape_pad_B
+        # temp1 = temp0.reshape((N, new_H, new_W, C_out))
+        # return temp1
         # raise NotImplementedError()
         ### END YOUR SOLUTION
 

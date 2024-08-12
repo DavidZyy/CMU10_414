@@ -21,7 +21,7 @@ class Dataset:
 
     def __len__(self) -> int:
         raise NotImplementedError
-    
+
     def apply_transforms(self, x):
         if self.transforms is not None:
             # apply the transforms
@@ -49,13 +49,18 @@ class DataLoader:
         dataset: Dataset,
         batch_size: Optional[int] = 1,
         shuffle: bool = False,
+        #zyy: add for this
+        device=None,
+        dtype="float32",
     ):
 
         self.dataset = dataset
         self.shuffle = shuffle
         self.batch_size = batch_size
+        self.device = device
+        self.dtype = dtype
         if not self.shuffle:
-            self.ordering = np.array_split(np.arange(len(dataset)), 
+            self.ordering = np.array_split(np.arange(len(dataset)),
                                            range(batch_size, len(dataset), batch_size))
 
     def __iter__(self):
@@ -66,7 +71,7 @@ class DataLoader:
         # will generate a list of ndarrays, each of which have 100 elements.
         if self.shuffle:
             self.ordering = np.random.permutation(len(self.dataset))
-            self.ordering = np.array_split(self.ordering, 
+            self.ordering = np.array_split(self.ordering,
                                            range(self.batch_size, len(self.dataset), self.batch_size))
         ### END YOUR SOLUTION
         return self
@@ -76,7 +81,7 @@ class DataLoader:
         self.current_batch_index += 1
         if self.current_batch_index >= len(self.ordering):
             raise StopIteration
-        
+
         batch_indices = self.ordering[self.current_batch_index]
         batch = [self.dataset[idx] for idx in batch_indices]  # batch is a list of tuple, (img, label)
 
@@ -84,8 +89,8 @@ class DataLoader:
         # batch[i][1] is the label
         img_batch = [batch[i][0] for i in range(len(batch))]
         label_batch = [batch[i][1] for i in range(len(batch))]
-        img = Tensor(np.stack(img_batch, axis=0))  # axis=0 means the number of samples
-        label = Tensor(np.stack(label_batch, axis=0))
+        img = Tensor(np.stack(img_batch, axis=0), device=self.device, dtype=self.dtype)  # axis=0 means the number of samples
+        label = Tensor(np.stack(label_batch, axis=0), device=self.device, dtype=self.dtype)
         return (img, label)
         ### END YOUR SOLUTION
 

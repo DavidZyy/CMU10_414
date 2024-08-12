@@ -16,8 +16,9 @@ def ResidualBlock(in_channels, out_channels, kernel_size, stride, device=None, d
 class ResNet9(ndl.nn.Module):
     def __init__(self, device=None, dtype="float32"):
         super().__init__()
+        # zyy:
+        self.device = device
         ### BEGIN YOUR SOLUTION ###
-        # raise NotImplementedError() ###
         self.model = nn.Sequential(nn.ConvBN(3, 16, 7, 4, device=device, dtype=dtype),
                                    nn.ConvBN(16, 32, 3, 2, device=device, dtype=dtype),
                                    ResidualBlock(32, 32, 3, 1, device=device, dtype=dtype),

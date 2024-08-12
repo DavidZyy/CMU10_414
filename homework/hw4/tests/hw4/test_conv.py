@@ -504,6 +504,8 @@ def one_iter_of_cifar10_training(dataloader, model, niter=1, loss_fn=ndl.nn.Soft
         if i >= niter:
             break
         i += 1
+    # y.shape[0] is the batch size, and niter is the batch num.
+    # total_loss calculate the loss of each sample.
     return correct/(y.shape[0]*niter), total_loss/(y.shape[0]*niter)
 
 
