@@ -24,6 +24,7 @@ _DEVICES = [ndl.cpu(), pytest.param(ndl.cuda(),
 BATCH_SIZES = [1, 15]
 INPUT_SIZES = [1, 11]
 HIDDEN_SIZES = [1, 12]
+# HIDDEN_SIZES = [10, 12]
 BIAS = [True, False]
 INIT_HIDDEN = [True, False]
 NONLINEARITIES = ['tanh', 'relu']

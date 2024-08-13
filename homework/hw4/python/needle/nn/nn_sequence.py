@@ -6,7 +6,7 @@ from needle import ops
 import needle.init as init
 import numpy as np
 from .nn_basic import Parameter, Module
-
+from ..backend_selection import array_api, BACKEND
 
 class Sigmoid(Module):
     def __init__(self):
@@ -14,8 +14,18 @@ class Sigmoid(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # ops. is for tensor, array_api. is for NDArray
+        temp1 = ops.exp(-x)
+        temp2 = 1 + temp1
+
+        # reuslt = 1 / temp2  # error
+        one = init.ones(*x.shape, device=x.device, dtype=x.dtype)
+        result = one / temp2
+        return result
         ### END YOUR SOLUTION
+
+def sigmoid(x):
+    return Sigmoid()(x)
 
 class RNNCell(Module):
     def __init__(self, input_size, hidden_size, bias=True, nonlinearity='tanh', device=None, dtype="float32"):
@@ -160,8 +170,8 @@ class RNN(Module):
             h = h0_split[layer]
             layer_out = []
 
+            out_split = ops.split(output, axis=0)
             for t in range(seq_len):
-                out_split = ops.split(output, axis=0)
                 h = self.rnn_cells[layer].forward(out_split[t], h)
                 layer_out.append(h)
             
@@ -193,7 +203,32 @@ class LSTMCell(Module):
         """
         super().__init__()
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.bias = bias
+        self.device = device
+        self.dtype = dtype
+
+        k = 1 / self.hidden_size
+        bound = (k)**0.5
+
+        hidden_size = 4*hidden_size
+
+        W_ih_array = init.rand(input_size, hidden_size, low=-bound, high=bound, device=device, dtype=dtype)
+        self.W_ih = Parameter(W_ih_array, device=device, dtype=dtype)
+
+        W_hh_array = init.rand(hidden_size, hidden_size, low=-bound, high=bound, device=device, dtype=dtype)
+        self.W_hh = Parameter(W_hh_array, device=device, dtype=dtype)
+
+        if bias:
+            bias_ih_array = init.rand(hidden_size, device=device, dtype=dtype)
+            self.bias_ih= Parameter(bias_ih_array, device=device, dtype=dtype)
+
+            bias_hh_array = init.rand(hidden_size, device=device, dtype=dtype)
+            self.bias_hh = Parameter(bias_hh_array, device=device, dtype=dtype)
+        else:
+            self.bias_ih = None
+            self.bias_hh = None
         ### END YOUR SOLUTION
 
 
@@ -214,7 +249,43 @@ class LSTMCell(Module):
             element in the batch.
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        temp1 = ops.matmul(X, self.W_ih)  # (bs, 4*hidden_size) = (bs, input_size) * (input_size, 4*hidden_size)
+
+        if h is not None:
+            h0, c0 = h
+            temp2 = ops.matmul(h0, self.W_hh)
+        else:
+            h0, c0 = 0, 0
+            temp2 = 0
+
+        if self.bias:
+            temp3 = self.bias_ih.reshape((1, self.bias_ih.shape[0])).broadcast_to(temp1.shape)
+            temp4 = self.bias_hh.reshape((1, self.bias_hh.shape[0])).broadcast_to(temp1.shape)
+        else:
+            temp3 = 0
+            temp4 = 0
+        
+        temp5 = temp1 + temp2 + temp3 + temp4  # (bs, 4*hidden_size)
+
+        temp_tuple = ops.split(temp5, axis=1)  # temp_tuple is a TensorTuple type, can only index 1 elem in it once
+        length = len(temp_tuple) // 4
+        i_list, f_list, g_list, o_list = [], [], [], []
+        for i in range(length):
+            i_list.append(temp_tuple[i])
+            f_list.append(temp_tuple[i + length])
+            g_list.append(temp_tuple[i + length * 2])
+            o_list.append(temp_tuple[i + length * 3])
+        i = ops.stack(i_list, axis=1)
+        f = ops.stack(f_list, axis=1)
+        g = ops.stack(g_list, axis=1)
+        o = ops.stack(o_list, axis=1)
+
+        i, f, g, o = sigmoid(i), sigmoid(f), ops.tanh(g), sigmoid(o)
+
+        c_out = f * c0 + i * g
+        h_out = o * ops.tanh(c_out)
+
+        return h_out, c_out
         ### END YOUR SOLUTION
 
 
@@ -241,9 +312,19 @@ class LSTM(Module):
         lstm_cells[k].bias_hh: The learnable hidden-hidden bias of the k-th layer,
             of shape (4*hidden_size,).
         """
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        super().__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.bias = bias
+        self.device = device
+        self.dtype = dtype
+        self.lstm_cells = []
+
+        for layer in range(self.num_layers):
+            layer_input_size = self.input_size if layer == 0 else self.hidden_size
+            cell = LSTMCell(layer_input_size, self.hidden_size, self.bias, self.device, self.dtype)
+            self.lstm_cells.append(cell)
 
     def forward(self, X, h=None):
         """
@@ -263,7 +344,36 @@ class LSTM(Module):
             h_n of shape (num_layers, bs, hidden_size) containing the final hidden cell state for each element in the batch.
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        seq_len, bs, _ = X.shape
+
+        if h is None:
+            h0 = init.zeros(self.num_layers, bs, self.hidden_size, device=X.device, dtype=X.dtype)
+            c0 = init.zeros(self.num_layers, bs, self.hidden_size, device=X.device, dtype=X.dtype)
+            h0_split = ops.split(h0, axis=0)
+            c0_split = ops.split(c0, axis=0)
+        else:
+            h0, c0 = h  # h0 c0 is (num_layers, bs, hidden_size)
+            h0_split = ops.split(h0, axis=0)  # h0 c0 is (bs, hidden_size)
+            c0_split = ops.split(c0, axis=0)
+
+        hn, cn= [], []
+        output = X
+        for layer in range(self.num_layers):
+            h, c = h0_split[layer], c0_split[layer]
+            layer_out = []
+
+            out_split = ops.split(output, axis=0)  # (bs, input_size)
+            for t in range(seq_len):
+                h, c = self.lstm_cells[layer](out_split[t], (h, c))
+                layer_out.append(h)
+
+            output = ops.stack(layer_out, axis=0)
+            hn.append(h)
+            cn.append(c)
+
+        hn = ops.stack(hn, axis=0)
+        cn = ops.stack(cn, axis=0)
+        return output, (hn, cn)
         ### END YOUR SOLUTION
 
 class Embedding(Module):
