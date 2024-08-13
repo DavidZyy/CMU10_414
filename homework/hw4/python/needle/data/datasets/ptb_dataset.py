@@ -25,7 +25,10 @@ class Dictionary(object):
         Returns the word's unique ID.
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if word not in self.word2idx:
+            self.word2idx[word] = len(self.idx2word)
+            self.idx2word.append(word)
+        return self.word2idx[word]
         ### END YOUR SOLUTION
 
     def __len__(self):
@@ -33,7 +36,7 @@ class Dictionary(object):
         Returns the number of unique words in the dictionary.
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return len(self.idx2word)
         ### END YOUR SOLUTION
 
 
@@ -44,8 +47,8 @@ class Corpus(object):
     """
     def __init__(self, base_dir, max_lines=None):
         self.dictionary = Dictionary()
-        self.train = self.tokenize(os.path.join(base_dir, 'train.txt'), max_lines)
-        self.test = self.tokenize(os.path.join(base_dir, 'test.txt'), max_lines)
+        self.train = self.tokenize(os.path.join(base_dir, 'ptb.train.txt'), max_lines)
+        self.test = self.tokenize(os.path.join(base_dir, 'ptb.test.txt'), max_lines)
 
     def tokenize(self, path, max_lines=None):
         """
@@ -60,7 +63,15 @@ class Corpus(object):
         ids: List of ids
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        ids = []
+        with open(path, 'r') as f:
+            for i, line in enumerate(f):
+                if max_lines is not None and i > max_lines:
+                    break
+                words = line.strip().split() + ['<eos>']
+                for word in words:
+                    ids.append(self.dictionary.add_word(word))
+        return ids
         ### END YOUR SOLUTION
 
 
@@ -81,7 +92,11 @@ def batchify(data, batch_size, device, dtype):
     Returns the data as a numpy array of shape (nbatch, batch_size).
     """
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    nbatch = len(data) // batch_size 
+    data = data[:nbatch * batch_size]
+    result = np.array(data).reshape(batch_size, nbatch).transpose()  # true?
+    # result = np.array(data).reshape(nbatch, batch_size) # wrong ?
+    return result
     ### END YOUR SOLUTION
 
 
@@ -90,7 +105,7 @@ def get_batch(batches, i, bptt, device=None, dtype=None):
     get_batch subdivides the source data into chunks of length bptt.
     If source is equal to the example output of the batchify function, with
     a bptt-limit of 2, we'd get the following two Variables for i = 0:
-    ┌ a g m s ┐ ┌ b h n t ┐
+    ┌ a g m s ┐ ┌ b h n t ┐   (zyy: the first one is data, the last one is target)
     └ b h n t ┘ └ c i o u ┘
     Note that despite the name of the function, the subdivison of data is not
     done along the batch dimension (i.e. dimension 1), since that was handled
@@ -101,9 +116,17 @@ def get_batch(batches, i, bptt, device=None, dtype=None):
     i - index
     bptt - Sequence length
     Returns:
+    zyy: bs means batch size
     data - Tensor of shape (bptt, bs) with cached data as NDArray
     target - Tensor of shape (bptt*bs,) with cached data as NDArray
     """
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    # batches have shape (nbatch, bs)
+    a = batches[i:i+bptt, :]  # (bptt, bs)
+    b = batches[i+1:i+bptt+1, :]
+
+    data = Tensor(a, device=device, dtype=dtype)
+    target = Tensor(b.reshape(-1), device=device, dtype=dtype)
+
+    return data, target
     ### END YOUR SOLUTION
