@@ -38,12 +38,14 @@ def test_rnn_cell(batch_size, input_size, hidden_size, bias, init_hidden, nonlin
     x = np.random.randn(batch_size, input_size).astype(np.float32)
     h0 = np.random.randn(batch_size, hidden_size).astype(np.float32)
 
+    # set pytorch model
     model_ = torch.nn.RNNCell(input_size, hidden_size, nonlinearity=nonlinearity, bias=bias)
     if init_hidden:
         h_ = model_(torch.tensor(x), torch.tensor(h0))
     else:
         h_ = model_(torch.tensor(x), None)
 
+    # set needle model
     model = nn.RNNCell(input_size, hidden_size, device=device, bias=bias, nonlinearity=nonlinearity)
     model.W_ih = ndl.Tensor(model_.weight_ih.detach().numpy().transpose(), device=device)
     model.W_hh = ndl.Tensor(model_.weight_hh.detach().numpy().transpose(), device=device)
@@ -54,6 +56,8 @@ def test_rnn_cell(batch_size, input_size, hidden_size, bias, init_hidden, nonlin
         h = model(ndl.Tensor(x, device=device), ndl.Tensor(h0, device=device))
     else:
         h = model(ndl.Tensor(x, device=device), None)
+
+    # check correctness 
     assert h.device == device
     np.testing.assert_allclose(h_.detach().numpy(), h.numpy(), atol=1e-5, rtol=1e-5)
     h.sum().backward()
