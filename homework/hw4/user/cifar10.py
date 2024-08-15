@@ -13,6 +13,6 @@ if __name__ == "__main__":
     dataloader_train = ndl.data.DataLoader(dataset_train, batch_size, shuffle=True, device=device)
     dataloader_test = ndl.data.DataLoader(dataset_test, batch_size, shuffle=True, device=device)
     model = ResNet9(device=device, dtype="float32")
-    evaluate_cifar10(model, dataloader_test)
+    evaluate_cifar10(model, dataloader_test)  # loss maybe inf, but after one epoch train, it will down.
     train_cifar10(model, dataloader_train, n_epochs=1)
     evaluate_cifar10(model, dataloader_test)
