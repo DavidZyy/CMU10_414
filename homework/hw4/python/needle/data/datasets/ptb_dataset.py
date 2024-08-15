@@ -122,6 +122,11 @@ def get_batch(batches, i, bptt, device=None, dtype=None):
     """
     ### BEGIN YOUR SOLUTION
     # batches have shape (nbatch, bs)
+    nbatch, _ = batches.shape
+    if i + bptt + 1 > nbatch:  # begin + length out of range
+        bptt = nbatch - i - 1
+
+    assert i+bptt+1 <= nbatch  # assert not out of range
     a = batches[i:i+bptt, :]  # (bptt, bs)
     b = batches[i+1:i+bptt+1, :]
 

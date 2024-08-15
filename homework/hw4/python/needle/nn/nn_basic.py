@@ -167,6 +167,9 @@ class SoftmaxLoss(Module):
         temp5 = ops.exp(temp4)  # softmax: exp_Z / exp_sum
 
         y_one_hot = init.one_hot(logits.shape[1], y, device=logits.device, dtype=logits.dtype)
+        # if temp5.shape != y_one_hot.shape:
+        #     print(temp5.shape, y_one_hot.shape)
+        # assert temp5.shape == y_one_hot.shape
         temp6 = temp5 * y_one_hot
         temp7 = ops.summation(temp6, axes=(1,))
         temp8 = -ops.log(temp7)

@@ -1,6 +1,9 @@
 """The module.
 """
 from typing import List
+
+import numpy
+
 from needle.autograd import Tensor
 from needle import ops
 import needle.init as init
@@ -212,19 +215,19 @@ class LSTMCell(Module):
         k = 1 / self.hidden_size
         bound = (k)**0.5
 
-        hidden_size = 4*hidden_size
+        # hidden_size = 4*hidden_size
 
-        W_ih_array = init.rand(input_size, hidden_size, low=-bound, high=bound, device=device, dtype=dtype)
+        W_ih_array = init.rand(input_size, 4*hidden_size, low=-bound, high=bound, device=device, dtype=dtype)
         self.W_ih = Parameter(W_ih_array, device=device, dtype=dtype)
 
-        W_hh_array = init.rand(hidden_size, hidden_size, low=-bound, high=bound, device=device, dtype=dtype)
+        W_hh_array = init.rand(hidden_size, 4*hidden_size, low=-bound, high=bound, device=device, dtype=dtype)
         self.W_hh = Parameter(W_hh_array, device=device, dtype=dtype)
 
         if bias:
-            bias_ih_array = init.rand(hidden_size, device=device, dtype=dtype)
+            bias_ih_array = init.rand(4*hidden_size, device=device, dtype=dtype)
             self.bias_ih= Parameter(bias_ih_array, device=device, dtype=dtype)
 
-            bias_hh_array = init.rand(hidden_size, device=device, dtype=dtype)
+            bias_hh_array = init.rand(4*hidden_size, device=device, dtype=dtype)
             self.bias_hh = Parameter(bias_hh_array, device=device, dtype=dtype)
         else:
             self.bias_ih = None
@@ -391,7 +394,10 @@ class Embedding(Module):
             initialized from N(0, 1).
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.num_embeddings = num_embeddings
+        self.embedding_dim = embedding_dim
+        weight_array = init.randn(num_embeddings, embedding_dim, device=device, dtype=dtype)
+        self.weight = Parameter(weight_array, device=device, dtype=dtype)
         ### END YOUR SOLUTION
 
     def forward(self, x: Tensor) -> Tensor:
@@ -405,5 +411,26 @@ class Embedding(Module):
         output of shape (seq_len, bs, embedding_dim)
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # (seq_len, bs) --represent as one hot--> (seq_len, bs, num_embeddings) --mul self.weight--> (seq_len, bs, embedding_dim)
+        # but for efficiency, we can not use mul, instead use indexing
+
+        # can not use index to get weight, because weight is a parameter, the grad will not pass to it.
+        seq_len, bs = x.shape
+        num_embeddings, embedding_dim = self.weight.shape  # num_embeddings = vocab_size, means the number of words, length of dictionary, embedding_dim means the input size
+        ll = []
+        idx_np_array = x.cached_data.numpy()  # if directly index x.cache_data will get a NDArray with 0 dim, not an int type
+        for i in range(x.shape[0]):
+            for j in range(x.shape[1]):
+                idx = int(idx_np_array[i, j])
+                # vec = init.zeros(self.num_embeddings, device=self.weight.device, dtype=self.weight.dtype)  # (num_embeddings, )
+                # vec = numpy.zeros()
+                vec = self.weight.device.full((self.num_embeddings, ), 0, dtype=self.weight.dtype)
+                vec[idx] = 1
+                one_hot = Tensor(vec, device=self.weight.device, dtype=self.weight.dtype)
+                # vec = Tensor(self.weight.cached_data[idx, :], device=self.weight.device, dtype=self.weight.dtype)
+                ll.append(one_hot)
+        temp1 = ops.stack(ll, axis=0)  # (seq_len*bs, num_embeddings)
+        temp2 = temp1 @ self.weight  # (seq_len*bs, num_embeddings) @ (num_embeddings, embedding_dim) = (seq_len*bs, embedding_dim)
+        temp3 = ops.reshape(temp2, (seq_len, bs, embedding_dim))
+        return temp3
         ### END YOUR SOLUTION

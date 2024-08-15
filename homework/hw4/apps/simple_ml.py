@@ -225,7 +225,38 @@ def epoch_general_ptb(data, model, seq_len=40, loss_fn=nn.SoftmaxLoss(), opt=Non
     """
     np.random.seed(4)
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    # raise NotImplementedError()
+    # total_loss, total_correct = [], 0.0
+    total_loss, total_correct = 0.0, 0.0
+    nbatch, batch_size = data.shape
+    if opt is None:
+        model.eval()
+        # for i in range(nbatch-seq_len):
+        for i in range(0, nbatch - 1, seq_len):
+            x, y = ndl.data.get_batch(data, i, seq_len, device=device, dtype=dtype)  # x: (bptt\seq_len, bs), y:(bptt*bs, )
+            logits, _ = model(x)  # logits: (seq_len*bs, vocab_size) vocab_size is the size\length of dictionary, or output_size
+            loss = loss_fn(logits, y)
+            total_correct += np.sum(logits.numpy().argmax(axis=1) == y.numpy())
+            # total_loss.append(loss.numpy())
+            total_loss += loss.numpy() * y.shape[0]
+    else:
+        model.train()
+        # for i in range(nbatch-seq_len):
+        for i in range(0, nbatch - 1, seq_len):
+            x, y = ndl.data.get_batch(data, i, seq_len, device=device, dtype=dtype)  # x: (bptt\seq_len, bs), y:(bptt*bs, )
+            logits, _ = model(x)  # logits: (seq_len*bs, vocab_size) vocab_size is the size\length of dictionary, or output_size
+            loss = loss_fn(logits, y)
+            total_correct += np.sum(logits.numpy().argmax(axis=1) == y.numpy())
+            # total_loss.append(loss.numpy())
+            total_loss += loss.numpy() * y.shape[0]
+
+            opt.reset_grad()
+            loss.backward()
+            opt.step()
+
+    sample_nums = nbatch*batch_size
+    # return total_correct/sample_nums, np.mean(total_loss)
+    return total_correct/sample_nums, total_loss/sample_nums
     ### END YOUR SOLUTION
 
 
@@ -252,7 +283,11 @@ def train_ptb(model, data, seq_len=40, n_epochs=1, optimizer=ndl.optim.SGD,
     """
     np.random.seed(4)
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    opt = optimizer(model.parameters(), lr=lr, weight_decay=weight_decay)
+    for i in range(n_epochs):
+        avg_acc, avg_loss = epoch_general_ptb(data, model, seq_len, loss_fn=loss_fn(), opt=opt, device=device, dtype=dtype)
+        print("train: Epoch %d: avg_acc %f, avg_loss %f" % (i, avg_acc, avg_loss))
+    return avg_acc, avg_loss
     ### END YOUR SOLUTION
 
 def evaluate_ptb(model, data, seq_len=40, loss_fn=nn.SoftmaxLoss,
@@ -272,7 +307,9 @@ def evaluate_ptb(model, data, seq_len=40, loss_fn=nn.SoftmaxLoss,
     """
     np.random.seed(4)
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    avg_acc, avg_loss = epoch_general_ptb(data, model, seq_len, loss_fn=loss_fn(), device=device, dtype=dtype)
+    print("evaluate: avg_acc %f, avg_loss %f" % (avg_acc, avg_loss))
+    return avg_acc, avg_loss
     ### END YOUR SOLUTION
 
 ### CODE BELOW IS FOR ILLUSTRATION, YOU DO NOT NEED TO EDIT
