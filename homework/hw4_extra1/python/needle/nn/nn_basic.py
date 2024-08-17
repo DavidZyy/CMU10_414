@@ -274,6 +274,7 @@ class LayerNorm1d(Module):
         raise NotImplementedError()
         ### END YOUR SOLUTION
 
+
 class Dropout(Module):
     def __init__(self, p=0.5):
         super().__init__()
@@ -285,7 +286,7 @@ class Dropout(Module):
             # Create a mask with the same shape as x, with elements 0 with probability p and 1 with probability (1 - p)
             # mask = np.random.binomial(1, 1 - self.p, size=x.shape)
             # mask_tensor = Tensor(mask)
-            mask_tensor = init.randb(*x.shape, p=1-self.p)
+            mask_tensor = init.randb(*x.shape, p=1-self.p, device=x.device, dtype=x.dtype)
             # Scale the output by 1 / (1 - p)
             temp1 = x * mask_tensor
             result = temp1 / (1 - self.p)

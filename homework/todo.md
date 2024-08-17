@@ -1,0 +1,1 @@
+- [ ] refine the codes of softmax loss
