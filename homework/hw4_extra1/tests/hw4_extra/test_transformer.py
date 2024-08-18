@@ -103,8 +103,9 @@ def test_attention_layer(batch_size, seq_len, input_dim, num_head, dim_head, cau
         batch_size, seq_len, input_dim, num_head, dim_head, causal, dropout, device
     )])
 
+    path = "/home/zhuyangyang/Course/CMU10_414/homework/hw4_extra1/tests/hw4_extra/data/"
     labels_path = (
-        "./tests/hw4_extra/data/" + 
+        path +
         "test_attention_layer-{}.npy"
         .format(current_input_id))
 
@@ -146,8 +147,9 @@ def test_transformer_layer(batch_size, seq_len, input_dim, num_head, dim_head, h
         batch_size, seq_len, input_dim, num_head, dim_head, hidden_size, causal, dropout, device
     )])
 
+    path = "/home/zhuyangyang/Course/CMU10_414/homework/hw4_extra1/tests/hw4_extra/data/"
     labels_path = (
-        "./tests/hw4_extra/data/" + 
+        path +
         "test_transformer_layer-{}.npy"
         .format(current_input_id))
 

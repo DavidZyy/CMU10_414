@@ -266,13 +266,40 @@ class LayerNorm1d(Module):
         self.dim = dim
         self.eps = eps
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.weight = Parameter(init.ones(dim, device=device, dtype=dtype, requires_grad=True))
+        self.bias = Parameter(init.zeros(dim, device=device, dtype=dtype, requires_grad=True))
         ### END YOUR SOLUTION
 
     def forward(self, x: Tensor) -> Tensor:
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        # the input shape and output shape should be the same
+        # suppose x have shape of (n, k)
+        assert len(x.shape) == 2
+        n = x.shape[0]
+        k = x.shape[1]
+        temp1 = ops.summation(x, axes=(1,))  # (n, )
+        temp2 = ops.reshape(temp1, (n, 1))  # (n, 1)
+        temp3 = ops.broadcast_to(temp2, x.shape)  # (n, k)
+        temp4 = temp3 / k  # E(x)
+
+        temp5 = x - temp4
+        temp6 = ops.power_scalar(temp5, 2)
+        temp7 = ops.summation(temp6, axes=(1,))
+        temp8 = ops.reshape(temp7, (n, 1))  # (n, 1)
+        temp9 = ops.broadcast_to(temp8, x.shape) / k  # (n, k) Var(x)
+
+        temp10 = temp9 + self.eps
+        temp11 = ops.power_scalar(temp10, 0.5)
+
+        temp12 = ops.divide(temp5, temp11)
+
+        weight = ops.reshape(self.weight, (1, k))  # (k,) -> (1, k)
+        bias = ops.reshape(self.bias, (1, k))
+        temp13 = ops.broadcast_to(weight, (n, k))  # (n, k)
+        temp14 = ops.broadcast_to(bias, (n, k))
+
+        temp15 = temp13 * temp12 + temp14
+        result = temp15
+        return result
 
 
 class Dropout(Module):

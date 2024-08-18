@@ -47,30 +47,16 @@ class MultiHeadAttention(Module):
         return ndarray.array(
             mask, device=device)
 
-    def matmul(self, a, b_transpose):
+    def matmul(self, a: Tensor, b_transpose: Tensor):
         """
         batched matrix multiplication;
         """
-#         a_shape = (*a.shape[:-1], 1, *a.shape[-1:])
-#         a = a.reshape(a_shape)
-# 
-#         b_transpose_shape = (*b_transpose.shape[:-2], 1, *b_transpose.shape[-2:])
-#         b_transpose = b_transpose.reshape(b_transpose_shape)
-# 
-#         broadcast_shape = list(a_shape)
-#         broadcast_shape[-2] = b_transpose_shape[-2]
-#         a = a.broadcast_to(broadcast_shape)
-# 
-#         broadcast_shape = list(b_transpose_shape)
-#         broadcast_shape[-3] = a_shape[-3]
-#         b_transpose = b_transpose.broadcast_to(broadcast_shape)
-# 
-#         return (a * b_transpose).sum(len(a.shape) - 1)
-
         # see my typora note of this batched matmul algorithm
         a_new_shape = (*a.shape, 1)
         b_new_shape = (*b_transpose.shape[:-2], 1, b_transpose.shape[-2], b_transpose.shape[-1])
 
+        a.cached_data = a.cached_data.compact()
+        b_transpose.cached_data = b_transpose.cached_data.compact()
         a_reshaped = a.reshape(a_new_shape)
         b_reshaped = b_transpose.reshape(b_new_shape)
 
@@ -139,9 +125,9 @@ class MultiHeadAttention(Module):
             temp3 = temp2 + Tmask  # (B, H, T, T)
         else:
             temp3 = temp2
-        temp4 = self.softmax(temp3)
-        temp5 = self.dropout(temp4)
-        temp6 = self.matmul(temp5, v)
+        temp4 = self.softmax(temp3)  # (B, H, T, T)
+        temp5 = self.dropout(temp4)  # (B, H, T, T)
+        temp6 = self.matmul(temp5, v)  # (B, H, T, D)
 
         result = temp6
         probs = temp5
@@ -231,6 +217,7 @@ class AttentionLayer(Module):
         if v is None:
             v = q
 
+        B, T, D0 = q.shape
         batch_size, queries_len, q_dim = q.shape
         _, keys_values_len, k_dim = k.shape
         _, _, v_dim = v.shape
@@ -238,7 +225,34 @@ class AttentionLayer(Module):
         result = None
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        q = ops.reshape(q, (q.shape[0]*q.shape[1], q.shape[2]))  # (B, T, D0) -> (B*T, D0)
+        k = ops.reshape(k, (k.shape[0]*k.shape[1], k.shape[2]))
+        v = ops.reshape(v, (v.shape[0]*v.shape[1], v.shape[2]))
+
+        Qn = self.prenorm_q(q)  # (B*T, D0)
+        Kn = self.prenorm_k(k)
+        Vn = self.prenorm_v(v)
+
+        Qw = self.q_projection(Qn)  # (B*T, HD) = (B*T, D0) @ (D0, HD)  H means num_head, D means dim_head
+        Kw = self.k_projection(Kn)
+        Vw = self.v_projection(Vn)
+
+        Qu = ops.reshape(Qw, (B, T, self.num_head, self.dim_head))  # (B, T, H, D)
+        Ku = ops.reshape(Kw, (B, keys_values_len, self.num_head, self.dim_head))
+        Vu = ops.reshape(Vw, (B, keys_values_len, self.num_head, self.dim_head))
+
+        Qu = ops.transpose(Qu, axes=(2, 1))  # (B, H, T, D)
+        Ku = ops.transpose(Ku, axes=(2, 1))
+        Vu = ops.transpose(Vu, axes=(2, 1))
+
+        result, probs = self.attn(Qu, Ku, Vu)  # result: (B, H, T, D)
+
+        result = ops.transpose(result, axes=(2, 1))  # (B, T, H, D)
+        result.cached_data = result.cached_data.compact()
+        result = ops.reshape(result, (B*T, self.num_head*self.dim_head))  # (B*T, H*D)
+
+        result = self.out_projection(result)  # (B*T, out_features)
+        result = ops.reshape(result, (B, T, result.shape[1]))  # (B, T, out_features)
         ### END YOUR SOLUTION
 
         return result
@@ -265,7 +279,33 @@ class TransformerLayer(Module):
         self.dtype = dtype
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        # raise NotImplementedError()
+        self.attn = AttentionLayer(
+            q_features=q_features,
+            num_head=num_head,
+            dim_head=dim_head,
+
+            dropout=dropout,
+            causal=causal,
+            device=device,
+            dtype=dtype)
+        self.dropout = Dropout(dropout)
+        self.layernorm = LayerNorm1d(
+            q_features, device=device, dtype=dtype)
+        # self.linear1 = Linear(
+        #     q_features, hidden_size, bias=False,
+        #     device=device, dtype=dtype)
+        # self.linear2 = Linear(
+        #     hidden_size, q_features, bias=False,
+        #     device=device, dtype=dtype)
+        # the bias should be used
+        self.linear1 = Linear(
+            q_features, hidden_size,
+            device=device, dtype=dtype)
+        self.linear2 = Linear(
+            hidden_size, q_features,
+            device=device, dtype=dtype)
+        self.relu = ReLU()
         ### END YOUR SOLUTION
 
     def forward(
@@ -280,11 +320,31 @@ class TransformerLayer(Module):
 
         batch_size, seq_len, x_dim = x.shape
 
-        ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
-        ### END YOUR SOLUTION
+        # x = x + self.dropout(self.attn(x))
+        temp0 = self.attn(x)  # (B, T, D) -> (B, T, D)
+        temp1 = self.dropout(temp0)  # (B, T, D)
+        temp2 = x + temp1  # (B, T, D)
+        
+        # x = x + self.dropout(self.linear2(self.dropout(self.relu(self.linear1(self.layernorm(x))))))
+        temp3 = ops.reshape(temp2, (batch_size*seq_len, x_dim))  # (B*T, D)
+        temp4 = self.layernorm(temp3)  # (B*T, D)
+        temp5 = self.linear1(temp4)  # (B*T, hidden_size)
+        temp6 = self.relu(temp5)
+        temp7 = self.dropout(temp6)
+        temp8 = self.linear2(temp7)  # (B*T, D)
+        temp9 = self.dropout(temp8)
+        temp10 = temp3 + temp9
+        temp11 = ops.reshape(temp10, (batch_size, seq_len, x_dim))
+        
+        return temp11
 
-        return x
+        # x = x + self.dropout(self.attn(x))  # (B, T, D)
+        # x = ops.reshape(x, (batch_size*seq_len, x_dim))  # (B*T, D)
+        # x = x + self.dropout(self.linear2(self.dropout(self.relu(self.linear1(self.layernorm(x))))))  # (B*T, D)
+        # x = ops.reshape(x, (batch_size, seq_len, x_dim))  # (B, T, D)
+        # return x
+
+        
 
 
 class Transformer(Module):
