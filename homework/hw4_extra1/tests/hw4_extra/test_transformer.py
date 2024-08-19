@@ -203,8 +203,9 @@ def test_transformer_model(
         causal, dropout, device
     )])
 
+    path = "/home/zhuyangyang/Course/CMU10_414/homework/hw4_extra1/tests/hw4_extra/data/"
     labels_path = (
-        "./tests/hw4_extra/data/" + 
+        path +
         "test_transformer_model-{}.npy"
         .format(current_input_id))
 

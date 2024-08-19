@@ -88,9 +88,9 @@ class LanguageModel(nn.Module):
         ### BEGIN YOUR SOLUTION
         # raise NotImplementedError()
         temp1 = self.embedding(x)  # (seq_len, bs, emb_size) or (seq_len, bs, input_size)
-        output, h = self.model(temp1, h)  # output is (seq_len, bs, output_size), h is (num_layers, bs, hidden_size)
-        temp2 = ndl.ops.reshape(output, (output.shape[0]*output.shape[1], output.shape[2]))  # (seq_len*bs, output_size)
-        temp3 = self.linear(temp2)  # (seq_len*bs, output_size)
+        output, h = self.model(temp1, h)  # output is (seq_len, bs, hidden_size), h is (num_layers, bs, hidden_size)
+        temp2 = ndl.ops.reshape(output, (output.shape[0]*output.shape[1], output.shape[2]))  # (seq_len*bs, hidden_size)
+        temp3 = self.linear(temp2)  # (seq_len*bs, output_size) = (seq_len*bs, hidden_size) @ (hidden_size, output_size)
         return temp3, h
         ### END YOUR SOLUTION
 

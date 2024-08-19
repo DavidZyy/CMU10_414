@@ -372,19 +372,49 @@ class Transformer(Module):
         self.batch_first = batch_first
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.transformer_layers = Sequential(
+            *[TransformerLayer(
+                q_features=embedding_size,
+                num_head=num_head,
+                dim_head=dim_head,
+                hidden_size=hidden_size,
+                dropout=dropout,
+                causal=causal,
+                device=device,
+                dtype=dtype)
+                for _ in range(num_layers)])
+
+        self.embedding = Embedding(
+            num_embeddings=sequence_len,
+            embedding_dim=embedding_size,
+            device=device,
+            dtype=dtype)
         ### END YOUR SOLUTION
 
     def forward(
         self,
         x, h=None
     ):
-
+        """
+        Input:
+            x: input features with shape (seq_len, batch_size, embedding_size): emdedding_size means the input x is pass in from the embedding layer
+            h: hidden state with shape (num_layers, batch_size, hidden_size)
+        Output:
+            out: hidden states with shape (seq_len, batch_size, hidden_size)
+            h_out: hidden states with shape (num_layers, batch_size, hidden_size)
+        """
         if not self.batch_first:
-            x = ops.transpose(x, axes=(0, 1))
+            x = ops.transpose(x, axes=(0, 1))  # x (batch_size, seq_len, embedding_size)
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        batch_size, seq_len, embedding_size = x.shape
+        position_array = np.arange(seq_len).reshape((seq_len, 1))
+        position = Tensor(position_array, device=x.device, dtype=x.dtype)  # (seq_len, 1)
+        position = ops.broadcast_to(position, (seq_len, batch_size))  # (seq_len, batch_size)
+        pos_emb = self.embedding(position)  # (seq_len, batch_size, embedding_size)
+        pos_emb = ops.transpose(pos_emb, axes=(1, 0))  # (batch_size, seq_len, embedding_size)
+        x = x + pos_emb
+        x = self.transformer_layers(x)
         ### END YOUR SOLUTION
 
         if not self.batch_first:
